@@ -131,12 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
     controller.addEventListener('selectstart', (e) => {
       touchDown = true;
 
-      // Check if any interactable item is selected
       const controllerPosition = new THREE.Vector3();
       controller.getWorldPosition(controllerPosition);
       interactableItems.forEach(item => {
         const distance = controllerPosition.distanceTo(item.position);
-        if (distance < 0.5) { // Adjust the distance threshold as needed
+        if (distance < 0.5) { 
           selectedItem = item;
         }
       });
@@ -165,8 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (prevTouchPosition) {
             // Rotation
             const deltaX = newPosition.x - prevTouchPosition.x;
-            const deltaZ = newPosition.y - prevTouchPosition.y;
-            selectedItem.rotation.y += deltaX * 30;
+            selectedItem.rotation.y += deltaX * 2 * Math.PI; // Rotates based on movement in x direction
 
             // Scaling
             const scaleDistance = newPosition.distanceTo(prevTouchPosition);
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
           prevTouchPosition = newPosition;
         }
 
-        if (selectedItem && !touchDown) {
+        if (!touchDown && selectedItem) {
           const hitTestResults = frame.getHitTestResults(hitTestSource);
           if (hitTestResults.length) {
             const hit = hitTestResults[0];
