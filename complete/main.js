@@ -67,75 +67,103 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(item);
     }
 
-    let selectedItem = null;
-    let prevTouchPosition = null;
-    let touchDown = false
+let selectedItem = null;
+let prevTouchPosition = null;
+let touchDown = false;
+let selectedObject = null;
 
-    const itemButtons = document.querySelector("#item-buttons");
-    const confirmButtons = document.querySelector("#confirm-buttons");
-    itemButtons.style.display = "block";
-    confirmButtons.style.display = "none";
+const itemButtons = document.querySelector("#item-buttons");
+const confirmButtons = document.querySelector("#confirm-buttons");
+itemButtons.style.display = "block";
+confirmButtons.style.display = "none";
 
-    const select = (selectItem) => {
-      items.forEach((item) => {
-	item.visible = item === selectItem;
-      });
-      selectedItem = selectItem;
-      itemButtons.style.display = "none";
-      confirmButtons.style.display = "block";
-    }
-    const cancelSelect = () => {
-      itemButtons.style.display = "block";
-      confirmButtons.style.display = "none";
-      if (selectedItem) {
-	selectedItem.visible = false;
-      }
-      selectedItem = null;
-    }
+const select = (selectItem) => {
+  items.forEach((item) => {
+    item.visible = item === selectItem;
+  });
+  selectedItem = selectItem;
+  itemButtons.style.display = "none";
+  confirmButtons.style.display = "block";
+}
 
-    const placeButton = document.querySelector("#place");
-    const cancelButton = document.querySelector("#cancel");
-    placeButton.addEventListener('beforexrselect', (e) => {
-      e.preventDefault();
-    });
-    placeButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const spawnItem = deepClone(selectedItem);
-      setOpacity(spawnItem, 1.0);
-      scene.add(spawnItem);
-      cancelSelect();
-    });
-    cancelButton.addEventListener('beforexrselect', (e) => {
-      e.preventDefault();
-    });
-    cancelButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      cancelSelect();
-    });
+const cancelSelect = () => {
+  itemButtons.style.display = "block";
+  confirmButtons.style.display = "none";
+  if (selectedItem) {
+    selectedItem.visible = false;
+  }
+  selectedItem = null;
+}
 
-    for (let i = 0; i < items.length; i++) {
-      const el = document.querySelector("#item" + i);
-      el.addEventListener('beforexrselect', (e) => {
-	e.preventDefault();
-      });
-      el.addEventListener('click', (e) => {
-	e.preventDefault();
-	e.stopPropagation();
-	select(items[i]);
-      });
-    }
+const placeButton = document.querySelector("#place");
+placeButton.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const spawnItem = deepClone(selectedItem);
+  setOpacity(spawnItem, 1.0);
+  scene.add(spawnItem);
+  selectedObject = spawnItem;
+  activateTransformControls(selectedObject);
+  cancelSelect();
+});
 
-    const controller = renderer.xr.getController(0);
-    scene.add(controller);
-    controller.addEventListener('selectstart', (e) => {
-      touchDown = true;
-    });
-    controller.addEventListener('selectend', (e) => {
-      touchDown = false;
+const activateTransformControls = (object) => {
+  const controls = new TransformControls(camera, renderer.domElement);
+  controls.attach(object);
+  scene.add(controls);
+  controls.addEventListener('change', render);
+
+  controller.addEventListener('selectstart', function (event) {
+    controls.detach();
+  });
+  controller.addEventListener('selectend', function () {
+    if (controls.object) {
       prevTouchPosition = null;
-    });
+    }
+  });
+
+  controller.addEventListener('squeezestart', function (event) {
+    controls.detach();
+  });
+  controller.addEventListener('squeezeend', function () {
+    if (controls.object) {
+      prevTouchPosition = null;
+    }
+  });
+};
+
+const render = () => {
+  renderer.render(scene, camera);
+};
+
+const cancelButton = document.querySelector("#cancel");
+cancelButton.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  cancelSelect();
+});
+
+for (let i = 0; i < items.length; i++) {
+  const el = document.querySelector("#item" + i);
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    select(items[i]);
+  });
+}
+
+const controller = renderer.xr.getController(0);
+scene.add(controller);
+controller.addEventListener('selectstart', (e) => {
+  touchDown = true;
+});
+controller.addEventListener('selectend', (e) => {
+  touchDown = false;
+  prevTouchPosition = null;
+});
+
+
+   
     
     renderer.xr.addEventListener("sessionstart", async (e) => {
       const session = renderer.xr.getSession();
