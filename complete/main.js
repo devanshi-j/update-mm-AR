@@ -113,24 +113,27 @@ const activateTransformControls = (object) => {
   scene.add(controls);
   controls.addEventListener('change', render);
 
+  // Detach controls on selectstart event
   controller.addEventListener('selectstart', function (event) {
     controls.detach();
   });
+
+  // Clear previous touch position on selectend event
   controller.addEventListener('selectend', function () {
-    if (controls.object) {
-      prevTouchPosition = null;
-    }
+    prevTouchPosition = null;
   });
 
+  // Detach controls on squeezestart event
   controller.addEventListener('squeezestart', function (event) {
     controls.detach();
   });
+
+  // Clear previous touch position on squeezeend event
   controller.addEventListener('squeezeend', function () {
-    if (controls.object) {
-      prevTouchPosition = null;
-    }
+    prevTouchPosition = null;
   });
 };
+
 
 const render = () => {
   renderer.render(scene, camera);
@@ -200,27 +203,24 @@ controller.addEventListener('selectend', (e) => {
 	renderer.render(scene, camera);
       });*/
 
-     renderer.setAnimationLoop((timestamp, frame) => {
+    renderer.setAnimationLoop((timestamp, frame) => {
   if (!frame) return;
 
-  const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
+  const referenceSpace = renderer.xr.getReferenceSpace();
 
   if (touchDown && selectedItem) {
     const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
     const newPosition = controller.position.clone();
-    newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
+    newPosition.applyMatrix4(viewerMatrix);
 
     if (prevTouchPosition) {
-      // Rotation
       const deltaX = newPosition.x - prevTouchPosition.x;
-      selectedItem.rotation.y += deltaX * 30; // Adjust rotation speed as needed
+      selectedItem.rotation.y += deltaX * 30;
 
-      // Scaling
       const scaleDistance = newPosition.distanceTo(prevTouchPosition);
-      const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
+      const scaleFactor = 1 + scaleDistance * 0.1;
       selectedItem.scale.multiplyScalar(scaleFactor);
 
-      // Dragging
       const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
       selectedItem.position.add(dragDistance);
     }
@@ -228,6 +228,7 @@ controller.addEventListener('selectend', (e) => {
     prevTouchPosition = newPosition;
   }
 
+  // Ensure selectedItem's position and visibility are correctly updated
   if (selectedItem) {
     const hitTestResults = frame.getHitTestResults(hitTestSource);
     if (hitTestResults.length) {
@@ -241,6 +242,7 @@ controller.addEventListener('selectend', (e) => {
 
   renderer.render(scene, camera);
 });
+
 
     });
   }
