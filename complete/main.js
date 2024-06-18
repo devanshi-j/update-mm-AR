@@ -200,49 +200,48 @@ controller.addEventListener('selectend', (e) => {
 	renderer.render(scene, camera);
       });*/
 
-      renderer.setAnimationLoop((timestamp, frame) => {
-        if (!frame) return;
-      
-        const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
-      
-        if (touchDown && selectedItem) {
-          const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
-          const newPosition = controller.position.clone();
-          newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
-      
-          if (prevTouchPosition) {
-            // Rotation
-            const deltaX = newPosition.x - prevTouchPosition.x;
-            const deltaZ = newPosition.y - prevTouchPosition.y;
-            selectedItem.rotation.y += deltaX * 30;
-      
-            // Scaling
-            const scaleDistance = newPosition.distanceTo(prevTouchPosition);
-            const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
-            selectedItem.scale.multiplyScalar(scaleFactor);
-      
-            // Dragging
-            const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
-            selectedItem.position.add(dragDistance);
-          }
-      
-          prevTouchPosition = newPosition;
-        }
-      
-        if (selectedItem) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length) {
-            const hit = hitTestResults[0];
-            selectedItem.visible = true;
-            selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-          } else {
-            selectedItem.visible = false;
-          }
-        }
-      
-        renderer.render(scene, camera);
-      });
-      
+     renderer.setAnimationLoop((timestamp, frame) => {
+  if (!frame) return;
+
+  const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
+
+  if (touchDown && selectedItem) {
+    const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
+    const newPosition = controller.position.clone();
+    newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
+
+    if (prevTouchPosition) {
+      // Rotation
+      const deltaX = newPosition.x - prevTouchPosition.x;
+      selectedItem.rotation.y += deltaX * 30; // Adjust rotation speed as needed
+
+      // Scaling
+      const scaleDistance = newPosition.distanceTo(prevTouchPosition);
+      const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
+      selectedItem.scale.multiplyScalar(scaleFactor);
+
+      // Dragging
+      const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
+      selectedItem.position.add(dragDistance);
+    }
+
+    prevTouchPosition = newPosition;
+  }
+
+  if (selectedItem) {
+    const hitTestResults = frame.getHitTestResults(hitTestSource);
+    if (hitTestResults.length) {
+      const hit = hitTestResults[0];
+      selectedItem.visible = true;
+      selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
+    } else {
+      selectedItem.visible = false;
+    }
+  }
+
+  renderer.render(scene, camera);
+});
+
     });
   }
   initialize();
