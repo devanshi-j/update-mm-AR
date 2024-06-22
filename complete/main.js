@@ -1,7 +1,7 @@
 import { loadGLTF } from "../libs/loader.js";
 import * as THREE from '../libs/three123/three.module.js';
 import { ARButton } from '../libs/jsm/ARButton.js';
-import { TransformControls } from '../libs/jsm/TransformControls.js'; // Ensure you have the TransformControls module imported
+import { TransformControls } from '../libs/jsm/TransformControls.js';
 
 const normalizeModel = (obj, height) => {
   // Scale according to the specified height
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const itemButtons = document.querySelector("#item-buttons");
     const confirmButtons = document.querySelector("#confirm-buttons");
-    itemButtons.style.display = "block";
+    itemButtons.style.display = "flex";
     confirmButtons.style.display = "none";
 
     const select = (selectItem) => {
@@ -89,11 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       selectedItem = selectItem;
       itemButtons.style.display = "none";
-      confirmButtons.style.display = "block";
+      confirmButtons.style.display = "flex";
     };
 
     const cancelSelect = () => {
-      itemButtons.style.display = "block";
+      itemButtons.style.display = "flex";
       confirmButtons.style.display = "none";
       if (selectedItem) {
         selectedItem.visible = false;
@@ -105,12 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
     placeButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const spawnItem = deepClone(selectedItem);
-      setOpacity(spawnItem, 1.0);
-      scene.add(spawnItem);
-      selectedItem = spawnItem;
-      activateTransformControls(selectedItem);
-      cancelSelect();
+      if (selectedItem) {
+        const spawnItem = deepClone(selectedItem);
+        setOpacity(spawnItem, 1.0);
+        scene.add(spawnItem);
+        selectedItem = spawnItem;
+        activateTransformControls(selectedItem);
+        cancelSelect();
+      }
     });
 
     const activateTransformControls = (object) => {
@@ -131,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cancelSelect();
     });
 
-    const itemElements = document.querySelectorAll(".item");
+    const itemElements = document.querySelectorAll(".button-image");
     itemElements.forEach((el, index) => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
@@ -180,11 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        render(camera, scene);
+        render();
       });
     });
 
-    render(camera, scene); // Initial render call
+    render(); // Initial render call
   };
 
   initialize();
