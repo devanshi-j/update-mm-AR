@@ -10,7 +10,7 @@ const normalizeModel = (obj, height) => {
   const bbox2 = new THREE.Box3().setFromObject(obj);
   const center = bbox2.getCenter(new THREE.Vector3());
   obj.position.set(-center.x, -center.y, -center.z);
-}
+};
 
 const setOpacity = (obj, opacity) => {
   obj.children.forEach((child) => {
@@ -20,7 +20,7 @@ const setOpacity = (obj, opacity) => {
     obj.material.transparent = true;
     obj.material.opacity = opacity;
   }
-}
+};
 
 const deepClone = (obj) => {
   const newObj = obj.clone();
@@ -30,7 +30,7 @@ const deepClone = (obj) => {
     }
   });
   return newObj;
-}
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   const initialize = async () => {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedItem = selectItem;
       itemButtons.style.display = "none";
       confirmButtons.style.display = "block";
-    }
+    };
 
     const cancelSelect = () => {
       itemButtons.style.display = "block";
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedItem.visible = false;
       }
       selectedItem = null;
-    }
+    };
 
     const placeButton = document.querySelector("#place");
     const cancelButton = document.querySelector("#cancel");
@@ -150,13 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     controller.addEventListener('selectend', () => {
       prevTouchPosition = null;
-      touchDown = false;
+      // Ensure touchDown remains true for continuous interaction
+      touchDown = true;
     });
 
     renderer.setAnimationLoop((timestamp, frame) => {
       if (!frame) return;
 
-      const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
+      const referenceSpace = renderer.xr.getReferenceSpace();
 
       if (touchDown && selectedItem) {
         const viewerPose = frame.getViewerPose(referenceSpace);
@@ -167,21 +168,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (prevTouchPosition) {
           const deltaX = newPosition.x - prevTouchPosition.x;
-          const deltaY = newPosition.y - prevTouchPosition.y;
-          const deltaZ = newPosition.z - prevTouchPosition.z;
-
-          // Rotation around Y-axis (yaw)
           selectedItem.rotation.y += deltaX * 30;
 
-          // Scale
           const scaleDistance = newPosition.distanceTo(prevTouchPosition);
-          const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
+          const scaleFactor = 1 + scaleDistance * 0.1;
           selectedItem.scale.multiplyScalar(scaleFactor);
 
-          // Dragging
-          selectedItem.position.x += deltaX;
-          selectedItem.position.y += deltaY;
-          selectedItem.position.z += deltaZ;
+          const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
+          selectedItem.position.add(dragDistance);
         }
 
         prevTouchPosition = newPosition.clone();
@@ -203,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderer.render(scene, camera);
     });
-  }
+  };
 
   initialize();
 });
