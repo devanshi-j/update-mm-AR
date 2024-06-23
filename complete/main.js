@@ -4,25 +4,29 @@ import {ARButton} from '../libs/jsm/ARButton.js';
 import {TransformControls} from '../libs/jsm/controls/TransformControls.js';
 
 const normalizeModel = (obj, height) => {
+  // scale it according to height
   const bbox = new THREE.Box3().setFromObject(obj);
   const size = bbox.getSize(new THREE.Vector3());
   obj.scale.multiplyScalar(height / size.y);
 
+  // reposition to center
   const bbox2 = new THREE.Box3().setFromObject(obj);
   const center = bbox2.getCenter(new THREE.Vector3());
   obj.position.set(-center.x, -center.y, -center.z);
 }
 
+// recursively set opacity
 const setOpacity = (obj, opacity) => {
   obj.children.forEach((child) => {
     setOpacity(child, opacity);
   });
   if (obj.material) {
-    obj.material.format = THREE.RGBAFormat;
+    obj.material.format = THREE.RGBAFormat; // required for opacity
     obj.material.opacity = opacity;
   }
 }
 
+// make clone object not sharing materials
 const deepClone = (obj) => {
   const newObj = obj.clone();
   newObj.traverse((o) => {
@@ -38,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    const light = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
     scene.add(light);
 
     const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
@@ -74,6 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmButtons.style.display = "none";
 
     const transformControls = new TransformControls(camera, renderer.domElement);
+    transformControls.addEventListener('dragging-changed', (event) => {
+      renderer.xr.getCamera(camera).position.set(event.target.position.x, event.target.position.y, event.target.position.z);
+    });
     scene.add(transformControls);
 
     const select = (selectItem) => {
@@ -84,12 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
       itemButtons.style.display = "none";
       confirmButtons.style.display = "block";
     }
-
     const cancelSelect = () => {
       itemButtons.style.display = "block";
       confirmButtons.style.display = "none";
       if (selectedItem) {
         selectedItem.visible = false;
+        transformControls.detach(selectedItem);
       }
       selectedItem = null;
     }
@@ -105,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const spawnItem = deepClone(selectedItem);
       setOpacity(spawnItem, 1.0);
       scene.add(spawnItem);
+      transformControls.attach(spawnItem);
       cancelSelect();
     });
     cancelButton.addEventListener('beforexrselect', (e) => {
@@ -137,52 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       touchDown = false;
       prevTouchPosition = null;
     });
-
-    window.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 't': // Translate
-          transformControls.setMode('translate');
-          break;
-        case 'r': // Rotate
-          transformControls.setMode('rotate');
-          break;
-        case 's': // Scale
-          transformControls.setMode('scale');
-          break;
-      }
-    });
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    const onPointerMove = (event) => {
-      if (event.isPrimary === false) return;
-      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-    }
-
-    window.addEventListener('pointermove', onPointerMove);
-
-    const onPointerDown = (event) => {
-      if (event.isPrimary === false) return;
-      raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(scene.children, true);
-
-      if (intersects.length > 0) {
-        const intersectedObject = intersects[0].object;
-        const parentObject = intersectedObject.parent;
-        if (selectedItem !== parentObject) {
-          selectedItem = parentObject;
-          transformControls.attach(selectedItem);
-        } else {
-          transformControls.detach();
-          selectedItem = null;
-        }
-      }
-    }
-
-    window.addEventListener('pointerdown', onPointerDown);
-
+    
     renderer.xr.addEventListener("sessionstart", async (e) => {
       const session = renderer.xr.getSession();
       const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
@@ -192,17 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!frame) return;
 
         const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
-        if (touchDown && selectedItem) {
-          const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
-          const newPosition = controller.position.clone();
-          newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
-          if (prevTouchPosition) {
-            const deltaX = newPosition.x - prevTouchPosition.x;
-            const deltaZ = newPosition.y - prevTouchPosition.y;
-            selectedItem.rotation.y += deltaX * 30;
-          }
-          prevTouchPosition = newPosition;
-        }
 
         if (selectedItem) {
           const hitTestResults = frame.getHitTestResults(hitTestSource);
