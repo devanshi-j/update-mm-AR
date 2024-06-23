@@ -1,7 +1,7 @@
 import {loadGLTF} from "../libs/loader.js";
 import * as THREE from '../libs/three123/three.module.js';
 import {ARButton} from '../libs/jsm/ARButton.js';
-import {TransformControls} from '../libs/jsm/controls/TransformControls.js';
+//import {TransformControls} from '../libs/jsm/controls/TransformControls.js';
 
 const normalizeModel = (obj, height) => {
   // scale it according to height
@@ -130,13 +130,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const controller = renderer.xr.getController(0);
     scene.add(controller);
+
+controller.addEventListener('select', (e) => {
+  // Detect pinch gesture
+  if (e.data.points.length === 2) {
+    const distance = e.data.points[0].distanceTo(e.data.points[1]);
+    const scaleFactor = 1 + distance * 0.1; // Adjust the factor as needed
+    selectedItem.scale.multiplyScalar(scaleFactor);
+  }
+});
     controller.addEventListener('selectstart', (e) => {
-      touchDown = true;
-    });
-    controller.addEventListener('selectend', (e) => {
-      touchDown = false;
-      prevTouchPosition = null;
-    });
+  // Start dragging or rotating
+  prevTouchPosition = e.data.points[0].clone();
+});
+
+controller.addEventListener('selectend', (e) => {
+  // End dragging or rotating
+  prevTouchPosition = null;
+});
+
     
    renderer.xr.addEventListener("sessionstart", async (e) => {
   const session = renderer.xr.getSession();
