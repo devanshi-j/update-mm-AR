@@ -167,14 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (prevTouchPosition) {
           const deltaX = newPosition.x - prevTouchPosition.x;
+          const deltaY = newPosition.y - prevTouchPosition.y;
+          const deltaZ = newPosition.z - prevTouchPosition.z;
+
+          // Rotation around Y-axis (yaw)
           selectedItem.rotation.y += deltaX * 30;
 
+          // Scale
           const scaleDistance = newPosition.distanceTo(prevTouchPosition);
           const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
           selectedItem.scale.multiplyScalar(scaleFactor);
 
-          const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
-          selectedItem.position.add(dragDistance);
+          // Dragging
+          selectedItem.position.x += deltaX;
+          selectedItem.position.y += deltaY;
+          selectedItem.position.z += deltaZ;
         }
 
         prevTouchPosition = newPosition.clone();
