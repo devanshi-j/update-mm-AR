@@ -126,6 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
 	select(items[i]);
       });
     }
+  
+
+renderer.xr.addEventListener("sessionstart", async (e) => {
+    const session = renderer.xr.getSession();
+    const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
+    const hitTestSource = await session.requestHitTestSource({space: viewerReferenceSpace});
+
+    handleUserInteractions(selectedItem, hitTestSource, viewerReferenceSpace);
+});
 
     const controller = renderer.xr.getController(0);
     scene.add(controller);
@@ -142,36 +151,54 @@ document.addEventListener('DOMContentLoaded', () => {
       const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
       const hitTestSource = await session.requestHitTestSource({space: viewerReferenceSpace});
 
-      renderer.setAnimationLoop((timestamp, frame) => {
-	if (!frame) return;
+    const handleUserInteractions = (selectedItem, hitTestSource, referenceSpace) => {
+    let prevTouchPosition = null;
+    let touchDown = false;
 
-	const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
-	if (touchDown && selectedItem) {
-	  const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
-	  const newPosition = controller.position.clone();
-	  newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
-	  if (prevTouchPosition) {
-	    const deltaX = newPosition.x - prevTouchPosition.x;
-	    const deltaZ = newPosition.y - prevTouchPosition.y;
-	    selectedItem.rotation.y += deltaX * 30;
-	  }
-	  prevTouchPosition = newPosition;
-	}
+    const handleRotation = (controller, frame) => {
+        if (touchDown && selectedItem) {
+            const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
+            const newPosition = controller.position.clone();
+            newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
+            if (prevTouchPosition) {
+                const deltaX = newPosition.x - prevTouchPosition.x;
+                const deltaZ = newPosition.y - prevTouchPosition.y;
+                selectedItem.rotation.y += deltaX * 30;
+            }
+            prevTouchPosition = newPosition;
+        }
+    };
 
-	if (selectedItem) {
-	  const hitTestResults = frame.getHitTestResults(hitTestSource);
-	  if (hitTestResults.length) {
-	    const hit = hitTestResults[0];
-	    selectedItem.visible = true;
-	    selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-	  } else {
-	    selectedItem.visible = false;
-	  }
-	}
+    const handleHitTesting = (frame) => {
+        if (selectedItem) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length) {
+                const hit = hitTestResults[0];
+                selectedItem.visible = true;
+                selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
+            } else {
+                selectedItem.visible = false;
+            }
+        }
+    };
 
-	renderer.render(scene, camera);
-      });
+    renderer.setAnimationLoop((timestamp, frame) => {
+        if (!frame) return;
+
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        
+        // Handle rotation based on user interaction
+        handleRotation(controller, frame);
+
+        // Handle hit testing to position the selected item based on AR environment
+        handleHitTesting(frame);
+
+        // Render the scene and handle user interactions
+        renderer.render(scene, camera);
     });
+};
+
+    
   }
   initialize();
 });
