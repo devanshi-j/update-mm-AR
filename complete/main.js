@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedItem = null;
     let prevTouchPosition = null;
-    let touchDown = true;
+    let touchDown = false;
 
     const itemButtons = document.querySelector("#item-buttons");
     const confirmButtons = document.querySelector("#confirm-buttons");
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     controller.addEventListener('selectend', (e) => {
       touchDown = true;
-      prevTouchPosition = e.data.points[0].clone();
+      //prevTouchPosition = e.data.points[0].clone();
     });
     
     renderer.xr.addEventListener("sessionstart", async (e) => {
