@@ -196,9 +196,7 @@ renderer.xr.addEventListener("sessionstart", async (e) => {
         // Render the scene and handle user interactions
         renderer.render(scene, camera);
     });
-};
-
-    
+});  
   }
   initialize();
 });
