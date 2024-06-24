@@ -134,7 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     controller.addEventListener('selectend', (e) => {
       touchDown = true;
-      //prevTouchPosition = e.data.points[0].clone();
+     if (touchDown && selectedItem) {
+	  const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
+	  const newPosition = controller.position.clone();
+	  newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
+	  if (prevTouchPosition) {
+	    const deltaX = newPosition.x - prevTouchPosition.x;
+	    const deltaZ = newPosition.y - prevTouchPosition.y;
+	    selectedItem.rotation.y += deltaX * 30;
+	  }
+	  prevTouchPosition = newPosition.clone();
+	}
     });
     
     renderer.xr.addEventListener("sessionstart", async (e) => {
@@ -146,17 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (!frame) return;
 
 	const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
-	if (touchDown && selectedItem) {
-	  const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
-	  const newPosition = controller.position.clone();
-	  newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
-	  if (prevTouchPosition) {
-	    const deltaX = newPosition.x - prevTouchPosition.x;
-	    const deltaZ = newPosition.y - prevTouchPosition.y;
-	    selectedItem.rotation.y += deltaX * 30;
-	  }
-	  prevTouchPosition = newPosition.clone();
-	}
+	
 
 	if (selectedItem) {
 	  const hitTestResults = frame.getHitTestResults(hitTestSource);
