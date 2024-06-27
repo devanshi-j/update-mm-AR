@@ -37,6 +37,7 @@ const deepClone = (obj) => {
 document.addEventListener('DOMContentLoaded', () => {
     const initialize = async () => {
         try {
+            console.log('Initializing AR scene...');
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const items = [];
             for (let i = 0; i < itemNames.length; i++) {
                 try {
+                    console.log(`Loading model ${itemNames[i]}...`);
                     const model = await loadGLTF('../assets/models/' + itemNames[i] + '/scene.gltf');
                     normalizeModel(model.scene, itemHeights[i]);
                     const item = new THREE.Group();
@@ -66,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     setOpacity(item, 0.5);
                     items.push(item);
                     scene.add(item);
+                    console.log(`Model ${itemNames[i]} loaded successfully.`);
                 } catch (error) {
                     console.error(`Error loading model ${itemNames[i]}:`, error);
                 }
@@ -111,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setOpacity(spawnItem, 1.0);
                 activeItem = spawnItem; // Set the spawned item as the active item
                 scene.add(spawnItem);
+                console.log('Item placed:', spawnItem);
                 cancelSelect();
             });
             cancelButton.addEventListener('beforexrselect', (e) => {
@@ -145,8 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const deltaY = newPosition.y - prevTouchPosition.y;
                         activeItem.rotation.y += deltaX * 30;
                         // Add additional transformations here if needed
+                        console.log('Interacting with item:', activeItem);
                     }
                     prevTouchPosition = newPosition.clone();
+                } else if (touchDown) {
+                    console.log('No active item to interact with.');
                 }
             }
 
@@ -158,14 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     activeItem = selectedItem;
                     selectedItem = null;
                 }
+                console.log('Select started');
             });
             controller.addEventListener('selectend', (e) => {
                 touchDown = false;
                 prevTouchPosition = null;
+                console.log('Select ended');
             });
 
             renderer.xr.addEventListener('sessionstart', async (e) => {
                 try {
+                    console.log('Session started.');
                     const session = renderer.xr.getSession();
                     const viewerReferenceSpace = await session.requestReferenceSpace('viewer');
                     const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
@@ -191,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Error during session start:', error);
                 }
             });
+
+            console.log('Initialization complete.');
         } catch (error) {
             console.error('Error initializing AR scene:', error);
         }
