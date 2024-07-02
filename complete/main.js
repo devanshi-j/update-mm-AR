@@ -131,90 +131,89 @@ const initialize = async () => {
         cancelButton.addEventListener('beforexrselect', (e) => {
             e.preventDefault();
             e.stopPropagation();
-                cancelSelect();
+            cancelSelect();
+        });
+
+        for (let i = 0; i < items.length; i++) {
+            const el = document.querySelector("#item" + i);
+            el.addEventListener('beforexrselect', (e) => {
+                e.preventDefault();
             });
-
-            for (let i = 0; i < items.length; i++) {
-                const el = document.querySelector("#item" + i);
-                el.addEventListener('beforexrselect', (e) => {
-                    e.preventDefault();
-                });
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    select(items[i]);
-                });
-            }
-
-            const handleUserInteractions = (controller, frame, referenceSpace) => {
-                const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
-                const newPosition = controller.position.clone();
-                newPosition.applyMatrix4(viewerMatrix);
-
-                if (touchDown && activeItem) {
-                    if (prevTouchPosition) {
-                        const deltaX = newPosition.x - prevTouchPosition.x;
-                        const deltaY = newPosition.y - prevTouchPosition.y;
-                        activeItem.rotation.y += deltaX * 30;
-                        // Add additional transformations here if needed
-                        console.log('Interacting with item:', activeItem);
-                    }
-                    prevTouchPosition = newPosition.clone();
-                } else if (touchDown) {
-                    console.log('No active item to interact with.');
-                }
-            }
-
-            const controller = renderer.xr.getController(0);
-            scene.add(controller);
-            controller.addEventListener('selectstart', (e) => {
-                touchDown = true;
-                if (selectedItem) {
-                    activeItem = selectedItem;
-                    selectedItem = null;
-                }
-                console.log('Select started');
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                select(items[i]);
             });
-            controller.addEventListener('selectend', (e) => {
-                touchDown = false;
-                prevTouchPosition = null;
-                console.log('Select ended');
-            });
-
-            renderer.xr.addEventListener('sessionstart', async (e) => {
-                try {
-                    console.log('Session started.');
-                    const session = renderer.xr.getSession();
-                    const viewerReferenceSpace = await session.requestReferenceSpace('viewer');
-                    const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
-
-                    renderer.setAnimationLoop((timestamp, frame) => {
-                        if (!frame) return;
-
-                        const referenceSpace = renderer.xr.getReferenceSpace();
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-
-                        if (selectedItem && hitTestResults.length) {
-                            const hit = hitTestResults[0];
-                            selectedItem.visible = true;
-                            selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-                        } else if (selectedItem) {
-                            selectedItem.visible = false;
-                        }
-
-                        handleUserInteractions(controller, frame, referenceSpace);
-                        renderer.render(scene, camera);
-                    });
-                } catch (error) {
-                    console.error('Error during session start:', error);
-                }
-            });
-
-            console.log('Initialization complete.');
-        } catch (error) {
-            console.error('Error initializing AR scene:', error);
         }
-    }
 
-    initialize();
-});
+        const handleUserInteractions = (controller, frame, referenceSpace) => {
+            const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
+            const newPosition = controller.position.clone();
+            newPosition.applyMatrix4(viewerMatrix);
+
+            if (touchDown && activeItem) {
+                if (prevTouchPosition) {
+                    const deltaX = newPosition.x - prevTouchPosition.x;
+                    const deltaY = newPosition.y - prevTouchPosition.y;
+                    activeItem.rotation.y += deltaX * 30;
+                    // Add additional transformations here if needed
+                    console.log('Interacting with item:', activeItem);
+                }
+                prevTouchPosition = newPosition.clone();
+            } else if (touchDown) {
+                console.log('No active item to interact with.');
+            }
+        }
+
+        const controller = renderer.xr.getController(0);
+        scene.add(controller);
+        controller.addEventListener('selectstart', (e) => {
+            touchDown = true;
+            if (selectedItem) {
+                activeItem = selectedItem;
+                selectedItem = null;
+            }
+            console.log('Select started');
+        });
+        controller.addEventListener('selectend', (e) => {
+            touchDown = false;
+            prevTouchPosition = null;
+            console.log('Select ended');
+        });
+
+        renderer.xr.addEventListener('sessionstart', async (e) => {
+            try {
+                console.log('Session started.');
+                const session = renderer.xr.getSession();
+                const viewerReferenceSpace = await session.requestReferenceSpace('viewer');
+                const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
+
+                renderer.setAnimationLoop((timestamp, frame) => {
+                    if (!frame) return;
+
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+                    if (selectedItem && hitTestResults.length) {
+                        const hit = hitTestResults[0];
+                        selectedItem.visible = true;
+                        selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
+                    } else if (selectedItem) {
+                        selectedItem.visible = false;
+                    }
+
+                    handleUserInteractions(controller, frame, referenceSpace);
+                    renderer.render(scene, camera);
+                });
+            } catch (error) {
+                console.error('Error during session start:', error);
+            }
+        });
+
+        console.log('Initialization complete.');
+    } catch (error) {
+        console.error('Error initializing AR scene:', error);
+    }
+}
+
+initialize();
