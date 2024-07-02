@@ -34,95 +34,103 @@ const deepClone = (obj) => {
     return newObj;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const initialize = async () => {
-        try {
-            console.log('Initializing AR scene...');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+window.addEventListener('load', () => {
+    console.log('Window loaded');
+    // Initialize AR scene
+    initialize();
+});
 
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            scene.add(light);
+window.addEventListener('beforeunload', () => {
+    console.log('Window unloading');
+    // Clean up resources
+    // ...
+});
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
+const initialize = async () => {
+    try {
+        console.log('Initializing AR scene...');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-            document.body.appendChild(renderer.domElement);
+        const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+        scene.add(light);
 
-            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } });
-            document.body.appendChild(arButton);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true;
 
-            const itemNames = ['coffee-table', 'chair', 'cushion'];
-            const itemHeights = [0.5, 0.7, 0.05];
-            const items = [];
-            for (let i = 0; i < itemNames.length; i++) {
-                try {
-                    console.log(`Loading model ${itemNames[i]}...`);
-                    const model = await loadGLTF('../assets/models/' + itemNames[i] + '/scene.gltf');
-                    normalizeModel(model.scene, itemHeights[i]);
-                    const item = new THREE.Group();
-                    item.add(model.scene);
-                    item.visible = false;
-                    setOpacity(item, 0.5);
-                    items.push(item);
-                    scene.add(item);
-                    console.log(`Model ${itemNames[i]} loaded successfully.`);
-                } catch (error) {
-                    console.error(`Error loading model ${itemNames[i]}:`, error);
-                }
+        document.body.appendChild(renderer.domElement);
+
+        const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } });
+        document.body.appendChild(arButton);
+
+        const itemNames = ['coffee-table', 'chair', 'cushion'];
+        const itemHeights = [0.5, 0.7, 0.05];
+        const items = [];
+        for (let i = 0; i < itemNames.length; i++) {
+            try {
+                console.log(`Loading model ${itemNames[i]}...`);
+                const model = await loadGLTF('../assets/models/' + itemNames[i] + '/scene.gltf');
+                normalizeModel(model.scene, itemHeights[i]);
+                const item = new THREE.Group();
+                item.add(model.scene);
+                item.visible = false;
+                setOpacity(item, 0.5);
+                items.push(item);
+                scene.add(item);
+                console.log(`Model ${itemNames[i]} loaded successfully.`);
+            } catch (error) {
+                console.error(`Error loading model ${itemNames[i]}:`, error);
             }
+        }
 
-            let selectedItem = null;
-            let activeItem = null; // Added for continuous interaction
-            let prevTouchPosition = null;
-            let touchDown = false;
+        let selectedItem = null;
+        let activeItem = null; // Added for continuous interaction
+        let prevTouchPosition = null;
+        let touchDown = false;
 
-            const itemButtons = document.querySelector("#item-buttons");
-            const confirmButtons = document.querySelector("#confirm-buttons");
+        const itemButtons = document.querySelector("#item-buttons");
+        const confirmButtons = document.querySelector("#confirm-buttons");
+        itemButtons.style.display = "block";
+        confirmButtons.style.display = "none";
+
+        const select = (selectItem) => {
+            items.forEach((item) => {
+                item.visible = item === selectItem;
+            });
+            selectedItem = selectItem;
+            itemButtons.style.display = "none";
+            confirmButtons.style.display = "block";
+        }
+
+        const cancelSelect = () => {
             itemButtons.style.display = "block";
             confirmButtons.style.display = "none";
-
-            const select = (selectItem) => {
-                items.forEach((item) => {
-                    item.visible = item === selectItem;
-                });
-                selectedItem = selectItem;
-                itemButtons.style.display = "none";
-                confirmButtons.style.display = "block";
+            if (selectedItem) {
+                selectedItem.visible = false;
             }
+            selectedItem = null;
+        }
 
-            const cancelSelect = () => {
-                itemButtons.style.display = "block";
-                confirmButtons.style.display = "none";
-                if (selectedItem) {
-                    selectedItem.visible = false;
-                }
-                selectedItem = null;
-            }
-
-            const placeButton = document.querySelector("#place");
-            const cancelButton = document.querySelector("#cancel");
-            placeButton.addEventListener('beforexrselect', (e) => {
-                e.preventDefault();
-            });
-            placeButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const spawnItem = deepClone(selectedItem);
-                setOpacity(spawnItem, 1.0);
-                activeItem = spawnItem; // Set the spawned item as the active item
-                scene.add(spawnItem);
-                console.log('Item placed:', spawnItem);
-                cancelSelect();
-            });
-            cancelButton.addEventListener('beforexrselect', (e) => {
-                e.preventDefault();
-            });
-            cancelButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+        const placeButton = document.querySelector("#place");
+        const cancelButton = document.querySelector("#cancel");
+        placeButton.addEventListener('beforexrselect', (e) => {
+            e.preventDefault();
+        });
+        placeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const spawnItem = deepClone(selectedItem);
+            setOpacity(spawnItem, 1.0);
+            activeItem = spawnItem; // Set the spawned item as the active item
+            scene.add(spawnItem);
+            console.log('Item placed:', spawnItem);
+            cancelSelect();
+        });
+        cancelButton.addEventListener('beforexrselect', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
                 cancelSelect();
             });
 
