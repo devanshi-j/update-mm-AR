@@ -103,8 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       const spawnItem = deepClone(selectedItem);
       setOpacity(spawnItem, 1.0);
-      scene.add(spawnItem);
-       selectedItem = spawnItem; // Update selectedItem reference
+      scene.add(spawnItem)
+      interactableModels.push(spawnItem); 
+      selectedItem = spawnItem; // Update selectedItem reference
       prevTouchPosition = null; // Reset prevTouchPosition
       cancelSelect();
     });
