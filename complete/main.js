@@ -139,10 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
       prevTouchPosition = null;
     });
     
-    renderer.xr.addEventListener("sessionstart", async (e) => {
-      const session = renderer.xr.getSession();
-      const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
-      const hitTestSource = await session.requestHitTestSource({space: viewerReferenceSpace});
+   //...
+
+renderer.xr.addEventListener("sessionstart", async (e) => {
+  const session = renderer.xr.getSession();
+  const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
+  const hitTestSource = await session.requestHitTestSource({space: viewerReferenceSpace});
+
+ 
 
      /* renderer.setAnimationLoop((timestamp, frame) => {
 	if (!frame) return;
@@ -175,11 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });*/
 
       renderer.setAnimationLoop((timestamp, frame) => {
-        if (!frame) return;
-      
-        const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
-      
-        if (touchDown && selectedItem) {
+    if (!frame) return;
+
+    const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
+
+   if (touchDown && selectedItem) {
           const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
           const newPosition = controller.position.clone();
           newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
@@ -203,21 +207,27 @@ document.addEventListener('DOMContentLoaded', () => {
           prevTouchPosition = newPosition;
         }
       
-        if (selectedItem) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length) {
-            const hit = hitTestResults[0];
-            selectedItem.visible = true;
-            selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-          } else {
-            selectedItem.visible = false;
-          }
-        }
-      
-        renderer.render(scene, camera);
-      });
-      
-    });
+
+    if (selectedItem) {
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
+      if (hitTestResults.length) {
+        const hit = hitTestResults[0];
+        selectedItem.visible = true;
+        selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
+      } else {
+        selectedItem.visible = false;
+      }
+    }
+
+    // Add animation loop to rotate the model
+    if (selectedItem &&!touchDown) {
+      selectedItem.rotation.y += 0.01; // adjust the rotation speed as needed
+    }
+
+    renderer.render(scene, camera);
+  });
+});
   }
   initialize();
 });
+   
