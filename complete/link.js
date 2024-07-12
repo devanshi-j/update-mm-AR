@@ -1,31 +1,25 @@
-import {loadGLTF} from "../libs/loader.js";
+import { loadGLTF } from "../libs/loader.js";
 import * as THREE from '../libs/three123/three.module.js';
-import {ARButton} from '../libs/jsm/ARButton.js';
+import { ARButton } from '../libs/jsm/ARButton.js';
 
 const normalizeModel = (obj, height) => {
-  // scale it according to height
   const bbox = new THREE.Box3().setFromObject(obj);
   const size = bbox.getSize(new THREE.Vector3());
   obj.scale.multiplyScalar(height / size.y);
-
-  // reposition to center
   const bbox2 = new THREE.Box3().setFromObject(obj);
   const center = bbox2.getCenter(new THREE.Vector3());
   obj.position.set(-center.x, -center.y, -center.z);
-}
+};
 
-// recursively set opacity
 const setOpacity = (obj, opacity) => {
-  obj.children.forEach((child) => {
-    setOpacity(child, opacity);
+  obj.traverse((child) => {
+    if (child.isMesh) {
+      child.material.transparent = true;
+      child.material.opacity = opacity;
+    }
   });
-  if (obj.material) {
-    obj.material.format = THREE.RGBAFormat; // required for opacity
-    obj.material.opacity = opacity;
-  }
-}
+};
 
-// make clone object not sharing materials
 const deepClone = (obj) => {
   const newObj = obj.clone();
   newObj.traverse((o) => {
@@ -34,30 +28,31 @@ const deepClone = (obj) => {
     }
   });
   return newObj;
-}
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-  const initialize = async() => {
+  const initialize = async () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-    const light = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     scene.add(light);
 
-    const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    const arButton = ARButton.createButton(renderer, {requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: {root: document.body}});
+    const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } });
     document.body.appendChild(renderer.domElement);
     document.body.appendChild(arButton);
 
     const itemNames = ['coffee-table', 'chair', 'cushion'];
     const itemHeights = [0.5, 0.7, 0.05];
     const items = [];
+    const placedItems = [];
+
     for (let i = 0; i < itemNames.length; i++) {
-      const model = await loadGLTF('../assets/models/' + itemNames[i] + '/scene.gltf');
+      const model = await loadGLTF(`../assets/models/${itemNames[i]}/scene.gltf`);
       normalizeModel(model.scene, itemHeights[i]);
       const item = new THREE.Group();
       item.add(model.scene);
@@ -69,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedItem = null;
     let prevTouchPosition = null;
-    let touchDown = false
+    let touchDown = false;
 
     const itemButtons = document.querySelector("#item-buttons");
     const confirmButtons = document.querySelector("#confirm-buttons");
@@ -77,41 +72,46 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmButtons.style.display = "none";
 
     const select = (selectItem) => {
-      items.forEach((item) => {
-	item.visible = item === selectItem;
+      items.concat(placedItems).forEach((item) => {
+        item.visible = item === selectItem;
       });
       selectedItem = selectItem;
       itemButtons.style.display = "none";
       confirmButtons.style.display = "block";
-    }
+    };
+
     const cancelSelect = () => {
       itemButtons.style.display = "block";
       confirmButtons.style.display = "none";
       if (selectedItem) {
-	selectedItem.visible = false;
+        selectedItem.visible = false;
       }
       selectedItem = null;
-    }
+    };
 
     const placeButton = document.querySelector("#place");
     const cancelButton = document.querySelector("#cancel");
+
     placeButton.addEventListener('beforexrselect', (e) => {
       e.preventDefault();
     });
+
     placeButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const spawnItem = deepClone(selectedItem);
-      setOpacity(spawnItem, 1.0);
-      scene.add(spawnItem)
-      interactableModels.push(spawnItem); 
-      selectedItem = spawnItem; // Update selectedItem reference
-      prevTouchPosition = null; // Reset prevTouchPosition
-      cancelSelect();
+      if (selectedItem) {
+        const spawnItem = deepClone(selectedItem);
+        setOpacity(spawnItem, 1.0);
+        scene.add(spawnItem);
+        placedItems.push(spawnItem);
+        cancelSelect();
+      }
     });
+
     cancelButton.addEventListener('beforexrselect', (e) => {
       e.preventDefault();
     });
+
     cancelButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -119,54 +119,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     for (let i = 0; i < items.length; i++) {
-      const el = document.querySelector("#item" + i);
+      const el = document.querySelector(`#item${i}`);
       el.addEventListener('beforexrselect', (e) => {
-	e.preventDefault();
+        e.preventDefault();
       });
       el.addEventListener('click', (e) => {
-	e.preventDefault();
-	e.stopPropagation();
-	select(items[i]);
+        e.preventDefault();
+        e.stopPropagation();
+        select(items[i]);
       });
     }
 
     const controller = renderer.xr.getController(0);
     scene.add(controller);
-    controller.addEventListener('selectstart', (e) => {
+    controller.addEventListener('selectstart', () => {
       touchDown = true;
     });
-    controller.addEventListener('selectend', (e) => {
+    controller.addEventListener('selectend', () => {
       touchDown = false;
       prevTouchPosition = null;
     });
 
-    renderer.xr.addEventListener("sessionstart", async (e) => {
+    renderer.xr.addEventListener("sessionstart", async () => {
       const session = renderer.xr.getSession();
       const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
-      const hitTestSource = await session.requestHitTestSource({space: viewerReferenceSpace});
+      const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
 
       renderer.setAnimationLoop((timestamp, frame) => {
         if (!frame) return;
 
-        const referenceSpace = renderer.xr.getReferenceSpace(); // ARButton requested 'local' reference space
+        const referenceSpace = renderer.xr.getReferenceSpace();
 
         if (touchDown && selectedItem) {
           const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
           const newPosition = controller.position.clone();
-          newPosition.applyMatrix4(viewerMatrix); // change to viewer coordinate
+          newPosition.applyMatrix4(viewerMatrix);
 
           if (prevTouchPosition) {
-            // Rotation
             const deltaX = newPosition.x - prevTouchPosition.x;
-            const deltaZ = newPosition.y - prevTouchPosition.y;
+            const deltaY = newPosition.y - prevTouchPosition.y;
             selectedItem.rotation.y += deltaX * 30;
 
-            // Scaling
             const scaleDistance = newPosition.distanceTo(prevTouchPosition);
-            const scaleFactor = 1 + scaleDistance * 0.1; // Adjust the factor as needed
+            const scaleFactor = 1 + scaleDistance * 0.1;
             selectedItem.scale.multiplyScalar(scaleFactor);
 
-            // Dragging
             const dragDistance = new THREE.Vector3().subVectors(newPosition, prevTouchPosition);
             selectedItem.position.add(dragDistance);
           }
@@ -174,25 +171,38 @@ document.addEventListener('DOMContentLoaded', () => {
           prevTouchPosition = newPosition;
         }
 
-        if (selectedItem) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length) {
-            const hit = hitTestResults[0];
+        const hitTestResults = frame.getHitTestResults(hitTestSource);
+        if (hitTestResults.length) {
+          const hit = hitTestResults[0];
+          const hitPosition = new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
+
+          let closestItem = null;
+          let minDistance = Infinity;
+          placedItems.forEach((item) => {
+            const distance = hitPosition.distanceTo(item.position);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestItem = item;
+            }
+          });
+
+          if (closestItem && minDistance < 0.1) {
+            selectedItem = closestItem;
             selectedItem.visible = true;
-            selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
           } else {
+            selectedItem = null;
+          }
+        } else {
+          if (selectedItem) {
             selectedItem.visible = false;
           }
-        }
-
-        // Add animation loop to rotate the model
-        if (selectedItem &&!touchDown) {
-          selectedItem.rotation.y += 0.01; // adjust the rotation speed as needed
+          selectedItem = null;
         }
 
         renderer.render(scene, camera);
       });
     });
-  }
+  };
+
   initialize();
 });
