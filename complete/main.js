@@ -13,12 +13,13 @@ const normalizeModel = (obj, height) => {
 };
 
 const setOpacity = (obj, opacity) => {
-  obj.traverse((child) => {
-    if (child.material) {
-      child.material.format = THREE.RGBAFormat;
-      child.material.opacity = opacity;
-    }
+  obj.children.forEach((child) => {
+    setOpacity(child, opacity);
   });
+  if (obj.material) {
+    obj.material.format = THREE.RGBAFormat;
+    obj.material.opacity = opacity;
+  }
 };
 
 const deepClone = (obj) => {
@@ -50,22 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const itemNames = ['coffee-table', 'chair', 'cushion'];
     const itemHeights = [0.5, 0.7, 0.05];
-    const items = await Promise.all(itemNames.map(async (name, i) => {
-      const model = await loadGLTF(`../assets/models/${name}/scene.gltf`);
+    const items = [];
+    for (let i = 0; i < itemNames.length; i++) {
+      const model = await loadGLTF('../assets/models/' + itemNames[i] + '/scene.gltf');
       normalizeModel(model.scene, itemHeights[i]);
       const item = new THREE.Group();
       item.add(model.scene);
       item.visible = false;
       setOpacity(item, 0.5);
+      items.push(item);
       scene.add(item);
-      return item;
-    }));
+    }
 
     let selectedItem = null;
     let prevTouchPosition = null;
     let touchDown = false;
-    let interactingItem = null;
-    const placedItems = [];
+
+    const placedItems = []; 
 
     const itemButtons = document.querySelector("#item-buttons");
     const confirmButtons = document.querySelector("#confirm-buttons");
@@ -90,31 +92,34 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedItem = null;
     };
 
-    document.querySelector("#place").addEventListener('click', (e) => {
+    const placeButton = document.querySelector("#place");
+    const cancelButton = document.querySelector("#cancel");
+    placeButton.addEventListener('beforexrselect', (e) => {
+      e.preventDefault();
+    });
+    placeButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const spawnItem = deepClone(selectedItem);
       setOpacity(spawnItem, 1.0);
       scene.add(spawnItem);
       placedItems.push(spawnItem);
-      attachInteractionListeners(spawnItem);
       cancelSelect();
     });
-
-    document.querySelector("#cancel").addEventListener('click', (e) => {
+    cancelButton.addEventListener('beforexrselect', (e) => {
+      e.preventDefault();
+    });
+    cancelButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       cancelSelect();
     });
 
-    const attachInteractionListeners = (item) => {
-      const cursor = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true }));
-      item.add(cursor);
-      item.cursor = cursor;
-    };
-
     for (let i = 0; i < items.length; i++) {
       const el = document.querySelector("#item" + i);
+      el.addEventListener('beforexrselect', (e) => {
+        e.preventDefault();
+      });
       el.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -133,4 +138,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     renderer.xr.addEventListener("sessionstart", async () => {
-      const session
+      const session = renderer.xr.getSession();
+      const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
+      const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
+
+      renderer.setAnimationLoop((timestamp, frame) => {
+        if (!frame) return;
+
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const viewerPose = frame.getViewerPose(referenceSpace);
+        if (!viewerPose) return;
+
+        if (touchDown) {
+          const viewerMatrix = new THREE.Matrix4().fromArray(viewerPose.transform.inverse.matrix);
+          const newPosition = controller.position.clone();
+          newPosition.applyMatrix4(viewerMatrix);
+          if (prevTouchPosition && selectedItem) {
+            const deltaX = newPosition.x - prevTouchPosition.x;
+            selectedItem.rotation.y += deltaX * 30;
+          }
+          prevTouchPosition = newPosition;
+        }
+
+        const hitTestResults = frame.getHitTestResults(hitTestSource);
+        if (hitTestResults.length > 0) {
+          const hit = hitTestResults[0];
+          const hitPose = hit.getPose(referenceSpace);
+
+          if (selectedItem) {
+            selectedItem.visible = true;
+            selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hitPose.transform.matrix));
+          }
+
+          placedItems.forEach((item) => {
+            item.traverse((child) => {
+              if (child.isMesh) {
+                const box = new THREE.Box3().setFromObject(child);
+                if (box.containsPoint(newPosition)) {
+                  item.rotation.y += 0.01;
+                }
+              }
+            });
+          });
+        } else {
+          if (selectedItem) {
+            selectedItem.visible = false;
+          }
+        }
+
+        renderer.render(scene, camera);
+      });
+    });
+  };
+  initialize();
+});
