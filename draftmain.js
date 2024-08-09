@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedItem = null;
     let prevTouchPosition = null;
     let touchDown = false;
-
+    
     const placedItems = []; 
 
     const itemButtons = document.querySelector("#item-buttons");
