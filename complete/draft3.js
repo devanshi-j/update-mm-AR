@@ -97,19 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedItem = null;
     };
 
-    // Function to handle interaction with placed items
-    const interactWithPlacedItem = (item) => {
-      // Rotate the item on interaction
-      item.rotation.y += Math.PI / 16; // Rotate by 11.25 degrees each time it's clicked
-
-      // Change color or apply some visual effect on interaction
-      item.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.set(Math.random() * 0xffffff); // Change to a random color
-        }
-      });
-    };
-
     // Place and cancel button event listeners
     const placeButton = document.querySelector("#place");
     const cancelButton = document.querySelector("#cancel");
@@ -127,16 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.add(spawnItem);
       placedItems.push(spawnItem);
 
-      // Make placed items selectable and add interaction
+      // Make placed items selectable
       spawnItem.traverse((child) => {
         if (child.isMesh) {
-          child.userData.selectable = true; // Mark as selectable
-
-          // Add event listener for click interaction
-          child.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent the event from bubbling up
-            interactWithPlacedItem(spawnItem);
-          });
+          child.userData.selectable = true;
         }
       });
 
@@ -215,6 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const box = new THREE.Box3().setFromObject(child);
                 if (box.containsPoint(controller.position)) {
                   selectedItem = item;  // Set the selected placed item as the active item
+                  // Define interaction logic for placed items
+                  // You can add more interactions like scaling, rotating, etc.
+                  // For example, to remove the item on selection:
+                  item.visible = true; // Ensure the item is visible
+                  item.rotation.y += Math.PI / 4; // Rotate the item when selected (example interaction)
                 }
               }
             });
