@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(renderer.domElement);
         document.body.appendChild(arButton);
 
-        const itemNames = ['coffee-table', 'chair', 'cushion'];
+        const itemNames = ['chair', 'coffee-table', 'cushion'];
         const itemHeights = [0.5, 0.7, 0.05];
         const items = [];
         const placedItems = []; // Array to store placed items
