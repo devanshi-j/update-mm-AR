@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(arButton);
 
         const itemNames = ['chair', 'coffee-table', 'cushion'];
-        const itemHeights = [0.5, 0.1, 0.08];
+        const itemHeights = [0.3, 0.4, 0.5];
         const items = [];
         const placedItems = [];
 
