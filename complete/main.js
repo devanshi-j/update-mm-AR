@@ -123,14 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedItem) {
                 const spawnItem = deepClone(selectedItem);
                 setOpacity(spawnItem, 1.0);
-
-                // Set initial position based on the hit test result
-                const hitTestResults = renderer.xr.getSession().frame.getHitTestResults(renderer.xr.getHitTestSourceForView(0));
-                if (hitTestResults.length) {
-                    const hit = hitTestResults[0];
-                    spawnItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-                }
-
                 scene.add(spawnItem);
                 placedItems.push(spawnItem); // Add to placedItems array
                 cancelSelect(); // Reset selection after placement
@@ -149,37 +141,37 @@ document.addEventListener('DOMContentLoaded', () => {
             prevTouchPosition = null;
         });
 
-        // Session start event listener
         renderer.xr.addEventListener("sessionstart", async () => {
             const session = renderer.xr.getSession();
-            const referenceSpace = await session.requestReferenceSpace("local-floor"); // Use local-floor for a fixed world position
-            const hitTestSource = await session.requestHitTestSource({ space: referenceSpace });
+            const viewerReferenceSpace = await session.requestReferenceSpace("viewer");
+            const hitTestSource = await session.requestHitTestSource({ space: viewerReferenceSpace });
 
             renderer.setAnimationLoop((timestamp, frame) => {
                 if (!frame) return;
 
+                const referenceSpace = renderer.xr.getReferenceSpace();
                 const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-                // Skip the position update for placed items
-                placedItems.forEach((item) => {
-                    if (hitTestResults.length) {
-                        const hit = hitTestResults[0];
-                        item.visible = true;
-                        item.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hit.getPose(referenceSpace).transform.matrix));
-                    } else {
-                        item.visible = false;
-                    }
-                });
+                // Place the item once using hit-test results
+                if (selectedItem && hitTestResults.length) {
+                    const hit = hitTestResults[0];
+                    const hitPose = hit.getPose(referenceSpace);
 
-                // Rotate items if touched
-                if (touchDown && placedItems) {
-                    const viewerMatrix = new THREE.Matrix4().fromArray(frame.getViewerPose(referenceSpace).transform.inverse.matrix);
+                    selectedItem.visible = true;
+                    selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hitPose.transform.matrix));
+                    setOpacity(selectedItem, 1.0); // Make it fully visible after placement
+                    placedItems.push(selectedItem); // Add to placed items for interaction
+                    selectedItem = null; // Reset selection
+                    cancelSelect(); // Reset UI to allow selection of another item
+                }
+
+                // Handle interactions with placed items (e.g., rotation)
+                if (touchDown && placedItems.length > 0) {
                     const newPosition = controller.position.clone();
-                    newPosition.applyMatrix4(viewerMatrix); // Change to viewer coordinate
                     if (prevTouchPosition) {
                         const deltaX = newPosition.x - prevTouchPosition.x;
                         placedItems.forEach((item) => {
-                            item.rotation.y += deltaX * 30;
+                            item.rotation.y += deltaX * 2.0; // Adjust sensitivity as needed
                         });
                     }
                     prevTouchPosition = newPosition;
