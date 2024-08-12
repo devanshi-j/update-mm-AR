@@ -20,7 +20,8 @@ const setOpacity = (obj, opacity) => {
         setOpacity(child, opacity);
     });
     if (obj.material) {
-        obj.material.transparent = true; // Ensure material is transparent
+        obj.material.format = THREE.RGBAFormat; // Required for opacity
+        obj.material.transparent = true; // Ensure the material is set to transparent
         obj.material.opacity = opacity;
     }
 };
@@ -49,11 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
 
-        const arButton = ARButton.createButton(renderer, {
-            requiredFeatures: ['hit-test'],
-            optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.body }
-        });
+        const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } });
         document.body.appendChild(renderer.domElement);
         document.body.appendChild(arButton);
 
@@ -107,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cancel selection logic before placing
         cancelButton.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             cancelSelect(); // Cancel selection
         });
 
@@ -115,12 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.querySelector(`#item${i}`);
             el.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 select(item);
             });
         });
 
         placeButton.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             if (selectedItem) {
                 const spawnItem = deepClone(selectedItem);
                 setOpacity(spawnItem, 1.0);
@@ -166,13 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     cancelSelect(); // Reset UI to allow selection of another item
                 }
 
-                // Handle interactions with placed items (e.g., rotation)
+                // Handle interactions with placed items (e.g., smoother rotation)
                 if (touchDown && placedItems.length > 0) {
                     const newPosition = controller.position.clone();
                     if (prevTouchPosition) {
                         const deltaX = newPosition.x - prevTouchPosition.x;
                         placedItems.forEach((item) => {
-                            item.rotation.y += deltaX * 2.0; // Adjust sensitivity as needed
+                            const targetRotationY = item.rotation.y + deltaX * 2.0; // Calculate the target rotation
+                            item.rotation.y = THREE.MathUtils.lerp(item.rotation.y, targetRotationY, 0.1); // Smoothly interpolate to the target rotation
                         });
                     }
                     prevTouchPosition = newPosition;
