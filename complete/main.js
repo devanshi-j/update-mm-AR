@@ -3,30 +3,25 @@ import * as THREE from '../libs/three123/three.module.js';
 import { ARButton } from '../libs/jsm/ARButton.js';
 
 const normalizeModel = (obj, height) => {
-    // Scale it according to height
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
     obj.scale.multiplyScalar(height / size.y);
 
-    // Reposition to center
     const bbox2 = new THREE.Box3().setFromObject(obj);
     const center = bbox2.getCenter(new THREE.Vector3());
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
-// Recursively set opacity
 const setOpacity = (obj, opacity) => {
     obj.children.forEach((child) => {
         setOpacity(child, opacity);
     });
     if (obj.material) {
-        obj.material.format = THREE.RGBAFormat; // Required for opacity
-        obj.material.transparent = true; // Ensure the material is set to transparent
+        obj.material.format = THREE.RGBAFormat;
         obj.material.opacity = opacity;
     }
 };
 
-// Make clone object not sharing materials
 const deepClone = (obj) => {
     const newObj = obj.clone();
     newObj.traverse((o) => {
@@ -55,11 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(arButton);
 
         const itemNames = ['chair', 'coffee-table', 'cushion'];
-        const itemHeights = [0.5, 0.3, 0.05];
+        const itemHeights = [0.5, 0.1, 0.08];
         const items = [];
-        const placedItems = []; // Array to store placed items
+        const placedItems = [];
 
-        // Load models
         for (let i = 0; i < itemNames.length; i++) {
             const model = await loadGLTF(`../assets/models/${itemNames[i]}/scene.gltf`);
             normalizeModel(model.scene, itemHeights[i]);
@@ -101,14 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
 
-        // Cancel selection logic before placing
         cancelButton.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            cancelSelect(); // Cancel selection
+            cancelSelect();
         });
 
-        // Item button listeners
         items.forEach((item, i) => {
             const el = document.querySelector(`#item${i}`);
             el.addEventListener('click', (e) => {
@@ -125,12 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const spawnItem = deepClone(selectedItem);
                 setOpacity(spawnItem, 1.0);
                 scene.add(spawnItem);
-                placedItems.push(spawnItem); // Add to placedItems array
-                cancelSelect(); // Reset selection after placement
+                placedItems.push(spawnItem);
+                cancelSelect();
             }
         });
 
-        // Controller and interaction logic...
         const controller = renderer.xr.getController(0);
         scene.add(controller);
 
@@ -153,27 +144,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const referenceSpace = renderer.xr.getReferenceSpace();
                 const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-                // Place the item once using hit-test results
                 if (selectedItem && hitTestResults.length) {
                     const hit = hitTestResults[0];
                     const hitPose = hit.getPose(referenceSpace);
 
                     selectedItem.visible = true;
                     selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hitPose.transform.matrix));
-                    setOpacity(selectedItem, 1.0); // Make it fully visible after placement
-                    placedItems.push(selectedItem); // Add to placed items for interaction
-                    selectedItem = null; // Reset selection
-                    cancelSelect(); // Reset UI to allow selection of another item
+                    setOpacity(selectedItem, 1.0);
+                    placedItems.push(selectedItem);
+                    selectedItem = null;
+                    cancelSelect();
                 }
 
-                // Handle interactions with placed items (e.g., smoother rotation)
                 if (touchDown && placedItems.length > 0) {
                     const newPosition = controller.position.clone();
                     if (prevTouchPosition) {
                         const deltaX = newPosition.x - prevTouchPosition.x;
                         placedItems.forEach((item) => {
-                            const targetRotationY = item.rotation.y + deltaX * 2.0; // Calculate the target rotation
-                            item.rotation.y = THREE.MathUtils.lerp(item.rotation.y, targetRotationY, 0.1); // Smoothly interpolate to the target rotation
+                            item.rotation.y += deltaX * 4.0; // Increase multiplier for faster rotation
                         });
                     }
                     prevTouchPosition = newPosition;
