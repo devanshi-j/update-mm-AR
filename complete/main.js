@@ -124,7 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 setOpacity(spawnItem, 1.0);
                 scene.add(spawnItem);
                 placedItems.push(spawnItem);
-                cancelSelect();
+
+                // Hide the selected item but don't set it to null
+                selectedItem.visible = false;
+
+                // Reset UI to allow for new selection
+                itemButtons.style.display = "block";
+                confirmButtons.style.display = "none";
             }
         });
 
