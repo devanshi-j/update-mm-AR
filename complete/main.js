@@ -70,9 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let isPinching = false;
         let initialDistance = null;
 
-        let isTwoFingerDragging = false;
-        let initialTouchDistance = null;
-
         const itemButtons = document.querySelector("#item-buttons");
         const confirmButtons = document.querySelector("#confirm-buttons");
         itemButtons.style.display = "block";
@@ -171,33 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (touchDown && placedItems.length > 0) {
                     const newPosition = controller.position.clone();
-                    const sources = session.inputSources;
+                    if (prevTouchPosition) {
+                        const deltaX = newPosition.x - prevTouchPosition.x;
 
-                    if (sources.length === 1) {
-                        if (prevTouchPosition) {
-                            const deltaX = newPosition.x - prevTouchPosition.x;
-
-                            const lastItem = placedItems[placedItems.length - 1];
-                            lastItem.rotation.y += deltaX * 6.0; // Rotation
-                        }
-                        prevTouchPosition = newPosition;
-                    } else if (sources.length === 2) {
-                        if (!isTwoFingerDragging) {
-                            initialTouchDistance = newPosition.distanceTo(controller.position);
-                            isTwoFingerDragging = true;
-                        } else {
-                            const currentDistance = newPosition.distanceTo(controller.position);
-                            const deltaDistance = currentDistance - initialTouchDistance;
-
-                            const lastItem = placedItems[placedItems.length - 1];
-                            lastItem.position.add(new THREE.Vector3(deltaDistance, 0, 0));
-
-                            initialTouchDistance = currentDistance; // Update for smooth dragging
-                        }
+                        const lastItem = placedItems[placedItems.length - 1];
+                        lastItem.rotation.y += deltaX * 6.0; // Faster rotation
                     }
-                } else {
-                    isTwoFingerDragging = false;
-                    initialTouchDistance = null;
+                    prevTouchPosition = newPosition;
                 }
 
                 // Pinching logic
@@ -218,4 +195,4 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initialize();
-});
+}); I need the sofa to appear larger how do I do that??
