@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Rotation logic (only if not dragging)
                         if (prevTouchPosition) {
                             const deltaX = newPosition.x - prevTouchPosition.x;
-                            lastItem.rotation.y += deltaX * 6.0; // Rotate faster
+                            lastItem.rotation.y += deltaX * 0.1; // Adjust rotation speed as needed
                         }
                     }
                     prevTouchPosition = newPosition;
