@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Hide the selected item but don't set it to null
                 selectedItem.visible = false; // This hides the original selected item
-                selectedItem = null; // Reset selected item
+                // Keep selectedItem for further placements
 
                 // Reset UI to allow for new selection
                 itemButtons.style.display = "block";
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedItem.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(hitPose.transform.matrix));
                     setOpacity(selectedItem, 1.0);
                     placedItems.push(selectedItem);
-                    selectedItem = null;
+                    selectedItem = null; // Set to null after placing to avoid further placements
                     cancelSelect();
                 }
 
@@ -248,3 +248,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initialize();
 });
+
