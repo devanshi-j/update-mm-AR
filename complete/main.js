@@ -44,7 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
 
-        const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } });
+        const arButton = ARButton.createButton(renderer, { 
+            requiredFeatures: ['hit-test'], 
+            optionalFeatures: ['dom-overlay'], 
+            domOverlay: { root: document.body } 
+        });
+        
         document.body.appendChild(renderer.domElement);
         document.body.appendChild(arButton);
 
@@ -69,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let touchDown = false;
         let isPinching = false;
         let initialDistance = null;
+        let isDragging = false;
 
         const itemButtons = document.querySelector("#item-buttons");
         const confirmButtons = document.querySelector("#confirm-buttons");
@@ -128,11 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         controller.addEventListener('selectstart', () => {
             touchDown = true;
+            if (isPinching) {
+                isDragging = false; // Don't start dragging if pinching
+            } else {
+                isDragging = true; // Start dragging if only one finger
+            }
         });
 
         controller.addEventListener('selectend', () => {
             touchDown = false;
             prevTouchPosition = null;
+            isDragging = false; // Reset dragging state
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -143,11 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
             session.addEventListener('inputsourceschange', () => {
                 const sources = session.inputSources;
                 if (sources.length === 2) {
-                    isPinching = true;
+                    isPinching = true; // For scaling
                     initialDistance = sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1];
                 } else {
-                    isPinching = false;
-                    initialDistance = null;
+                    isPinching = false; // Reset pinch state
                 }
             });
 
@@ -166,13 +177,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     setOpacity(selectedItem, 1.0);
                 }
 
+                // Handle dragging logic
+                const newPosition = controller.position.clone();
                 if (touchDown && placedItems.length > 0) {
-                    const newPosition = controller.position.clone();
-                    if (prevTouchPosition) {
-                        const deltaX = newPosition.x - prevTouchPosition.x;
+                    const lastItem = placedItems[placedItems.length - 1];
 
-                        const lastItem = placedItems[placedItems.length - 1];
-                        lastItem.rotation.y += deltaX * 6.0; // Faster rotation
+                    if (isDragging) {
+                        // Dragging logic
+                        if (prevTouchPosition) {
+                            const deltaY = newPosition.y - prevTouchPosition.y; // Drag along Y-axis
+                            lastItem.position.y += deltaY * 0.01; // Adjust dragging speed
+                        }
+                    } else {
+                        // Rotation logic (only if not dragging)
+                        if (prevTouchPosition) {
+                            const deltaX = newPosition.x - prevTouchPosition.x;
+                            lastItem.rotation.y += deltaX * 6.0; // Rotate faster
+                        }
                     }
                     prevTouchPosition = newPosition;
                 }
