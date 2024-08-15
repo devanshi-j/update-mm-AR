@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let touchDown = false;
         let isPinching = false;
         let initialDistance = null;
+        let isDragging = false;
 
         const itemButtons = document.querySelector("#item-buttons");
         const confirmButtons = document.querySelector("#confirm-buttons");
@@ -133,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controller.addEventListener('selectend', () => {
             touchDown = false;
             prevTouchPosition = null;
+            isDragging = false; // Reset dragging state when interaction ends
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -166,20 +168,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     setOpacity(selectedItem, 1.0);
                 }
 
-                if (touchDown && placedItems.length > 0) {
+                const sources = session.inputSources;
+                if (sources.length === 1 && touchDown && placedItems.length > 0) {
                     const newPosition = controller.position.clone();
                     if (prevTouchPosition) {
                         const deltaX = newPosition.x - prevTouchPosition.x;
 
                         const lastItem = placedItems[placedItems.length - 1];
-                        lastItem.rotation.y += deltaX * 6.0; // Faster rotation
+                        lastItem.rotation.y += deltaX * 6.0; // Rotate on single finger drag
                     }
                     prevTouchPosition = newPosition;
                 }
 
-                // Pinching logic
+                if (sources.length === 2 && placedItems.length > 0) {
+                    isDragging = true;
+                    const firstPosition = new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0);
+                    const secondPosition = new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0);
+
+                    const averagePosition = firstPosition.add(secondPosition).multiplyScalar(0.5);
+
+                    const lastItem = placedItems[placedItems.length - 1];
+                    lastItem.position.x += averagePosition.x * 0.01; // Move on double finger drag
+                    lastItem.position.y -= averagePosition.y * 0.01;
+                }
+
                 if (isPinching && placedItems.length > 0 && initialDistance !== null) {
-                    const sources = session.inputSources;
                     const currentDistance = sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1];
                     const scaleFactor = currentDistance / initialDistance;
 
@@ -195,4 +208,4 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initialize();
-}); I need the sofa to appear larger how do I do that??
+});
