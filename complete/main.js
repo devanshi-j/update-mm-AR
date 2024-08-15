@@ -22,10 +22,10 @@ const setOpacity = (obj, opacity) => {
 };
 
 const deepClone = (obj) => {
-    const newObj = obj.clone();
+    const newObj = obj.clone(true); // Clone the entire object hierarchy
     newObj.traverse((o) => {
         if (o.isMesh) {
-            o.material = o.material.clone();
+            o.material = o.material.clone(); // Ensure materials are cloned as well
         }
     });
     return newObj;
@@ -250,7 +250,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                     const scale = currentDistance / initialDistance;
 
+                    // Apply the scaling to the whole group
                     currentInteractedItem.scale.multiplyScalar(scale);
+
                     initialDistance = currentDistance;
                 }
 
