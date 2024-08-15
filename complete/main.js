@@ -147,13 +147,20 @@ document.addEventListener('DOMContentLoaded', () => {
             session.addEventListener('inputsourceschange', () => {
                 const sources = session.inputSources;
                 if (sources.length === 2) {
+                    isPinching = true;
+                    initialDistance = Math.sqrt(
+                        Math.pow(sources[0].gamepad.axes[0] - sources[1].gamepad.axes[0], 2) +
+                        Math.pow(sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1], 2)
+                    );
                     isDraggingWithTwoFingers = true;
                     initialFingerPositions = [
                         new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
                         new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
                     ];
                 } else {
+                    isPinching = false;
                     isDraggingWithTwoFingers = false;
+                    initialDistance = null;
                     initialFingerPositions = [];
                 }
             });
@@ -206,7 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Handling pinch to scale
                 if (isPinching && currentInteractedItem && initialDistance !== null) {
                     const sources = session.inputSources;
-                    const currentDistance = sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(sources[0].gamepad.axes[0] - sources[1].gamepad.axes[0], 2) +
+                        Math.pow(sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1], 2)
+                    );
                     const scaleFactor = currentDistance / initialDistance;
 
                     currentInteractedItem.scale.multiplyScalar(scaleFactor);
