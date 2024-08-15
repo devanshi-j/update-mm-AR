@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const controller = renderer.xr.getController(0);
         scene.add(controller);
 
-        controller.addEventListener('selectstart', () => {
+        controller.addEventListener('selectstart', (event) => {
             touchDown = true;
 
             const intersectedObject = getIntersectedObject();
@@ -156,6 +156,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentInteractedItem = intersectedObject;
             } else {
                 currentInteractedItem = null; // Reset if nothing is intersected
+            }
+
+            // Determine how many fingers are down
+            const sources = event.target.xrSession.inputSources;
+            if (sources.length === 1) {
+                // One finger for rotation
+                isDraggingWithTwoFingers = false; // Ensure dragging is disabled
+            } else if (sources.length === 2) {
+                // Two fingers for dragging
+                isDraggingWithTwoFingers = true;
+                // Initialize initialFingerPositions here if needed
             }
         });
 
@@ -208,35 +219,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Handle interactions with placed items
                 if (touchDown && currentInteractedItem) {
                     const newPosition = controller.position.clone();
-                    if (prevTouchPosition) {
-                        const deltaX = newPosition.x - prevTouchPosition.x;
-                        const deltaY = newPosition.y - prevTouchPosition.y;
 
-                        // Rotate the object based on the X-axis delta
-                        currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
+                    if (isDraggingWithTwoFingers) {
+                        // Handle two-finger dragging
+                        const sources = session.inputSources;
+                        const currentFingerPositions = [
+                            new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
+                            new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
+                        ];
 
-                        // Move the object based on the Y-axis delta
-                        currentInteractedItem.position.y += deltaY; // Adjust for vertical dragging
+                        const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
+                        const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
+
+                        // Move the object based on the average delta for both fingers
+                        currentInteractedItem.position.x += deltaX;
+                        currentInteractedItem.position.y -= deltaY; // Adjust for vertical dragging, invert if needed
+
+                        initialFingerPositions = currentFingerPositions; // Update initial positions for next frame
+                    } else {
+                        // One-finger rotation
+                        if (prevTouchPosition) {
+                            const deltaX = newPosition.x - prevTouchPosition.x;
+                            currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
+                        }
+                        prevTouchPosition = newPosition; // Update previous position
                     }
-                    prevTouchPosition = newPosition; // Update previous position
-                }
-
-                // Handling two-finger dragging
-                if (isDraggingWithTwoFingers && currentInteractedItem) {
-                    const sources = session.inputSources;
-                    const currentFingerPositions = [
-                        new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
-                        new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
-                    ];
-
-                    const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
-                    const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
-
-                    // Move the object based on the average delta for both fingers
-                    currentInteractedItem.position.x += deltaX;
-                    currentInteractedItem.position.y -= deltaY; // Adjust for vertical dragging, invert if needed
-
-                    initialFingerPositions = currentFingerPositions; // Update initial positions for next frame
                 }
 
                 // Handling pinch to scale
