@@ -210,14 +210,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newPosition = controller.position.clone();
                     if (prevTouchPosition) {
                         const deltaX = newPosition.x - prevTouchPosition.x;
+                        const deltaY = newPosition.y - prevTouchPosition.y;
 
+                        // Rotate the object based on the X-axis delta
                         currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
 
-                        // Debugging logs
-                        console.log("Rotation Delta:", deltaX);
-                        console.log("New Rotation Y:", currentInteractedItem.rotation.y);
+                        // Move the object based on the Y-axis delta
+                        currentInteractedItem.position.y += deltaY; // Adjust for vertical dragging
                     }
-                    prevTouchPosition = newPosition;
+                    prevTouchPosition = newPosition; // Update previous position
                 }
 
                 // Handling two-finger dragging
@@ -231,14 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
                     const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
 
+                    // Move the object based on the average delta for both fingers
                     currentInteractedItem.position.x += deltaX;
-                    currentInteractedItem.position.y += deltaY;
+                    currentInteractedItem.position.y -= deltaY; // Adjust for vertical dragging, invert if needed
 
-                    // Debugging logs
-                    console.log("Dragging Delta X:", deltaX);
-                    console.log("Dragging Delta Y:", deltaY);
-
-                    initialFingerPositions = currentFingerPositions;
+                    initialFingerPositions = currentFingerPositions; // Update initial positions for next frame
                 }
 
                 // Handling pinch to scale
@@ -253,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Apply the scaling to the whole group
                     currentInteractedItem.scale.multiplyScalar(scale);
 
-                    initialDistance = currentDistance;
+                    initialDistance = currentDistance; // Update the initial distance for the next frame
                 }
 
                 renderer.render(scene, camera);
