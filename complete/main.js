@@ -69,8 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let touchDown = false;
         let isPinching = false;
         let initialDistance = null;
-        let isDragging = false;
-        let fingerPositions = { finger1: null, finger2: null };
+        let isDraggingWithTwoFingers = false;
+        let initialFingerPositions = [];
+        let currentInteractedItem = null;
 
         const itemButtons = document.querySelector("#item-buttons");
         const confirmButtons = document.querySelector("#confirm-buttons");
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setOpacity(spawnItem, 1.0);
                 scene.add(spawnItem);
                 placedItems.push(spawnItem);
+                currentInteractedItem = spawnItem; // Set the current interacted item
                 cancelSelect(); // Hide the selected model and reset selection
             }
         });
@@ -135,9 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
         controller.addEventListener('selectend', () => {
             touchDown = false;
             prevTouchPosition = null;
-            isDragging = false;
-            fingerPositions.finger1 = null;
-            fingerPositions.finger2 = null;
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -148,13 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
             session.addEventListener('inputsourceschange', () => {
                 const sources = session.inputSources;
                 if (sources.length === 2) {
-                    isPinching = true;
-                    initialDistance = sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1];
-                    fingerPositions.finger1 = sources[0].targetRaySpace;
-                    fingerPositions.finger2 = sources[1].targetRaySpace;
+                    isDraggingWithTwoFingers = true;
+                    initialFingerPositions = [
+                        new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
+                        new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
+                    ];
                 } else {
-                    isPinching = false;
-                    initialDistance = null;
+                    isDraggingWithTwoFingers = false;
+                    initialFingerPositions = [];
                 }
             });
 
@@ -173,51 +173,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     setOpacity(selectedItem, 1.0);
                 }
 
+                // Handle interactions with placed items
                 if (touchDown && placedItems.length > 0) {
-                    if (session.inputSources.length === 1) {
-                        // Single-finger drag: rotation
-                        const newPosition = controller.position.clone();
-                        if (prevTouchPosition) {
-                            const deltaX = newPosition.x - prevTouchPosition.x;
+                    const newPosition = controller.position.clone();
+                    if (prevTouchPosition) {
+                        const deltaX = newPosition.x - prevTouchPosition.x;
 
-                            const lastItem = placedItems[placedItems.length - 1];
-                            lastItem.rotation.y += deltaX * 6.0;
+                        if (currentInteractedItem) {
+                            currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
                         }
-                        prevTouchPosition = newPosition;
-                    } else if (session.inputSources.length === 2) {
-                        // Double-finger drag: translation
-                        isDragging = true;
-
-                        const newFinger1Pos = new THREE.Vector3();
-                        const newFinger2Pos = new THREE.Vector3();
-
-                        newFinger1Pos.setFromMatrixPosition(new THREE.Matrix4().fromArray(fingerPositions.finger1));
-                        newFinger2Pos.setFromMatrixPosition(new THREE.Matrix4().fromArray(fingerPositions.finger2));
-
-                        const deltaPos1 = newFinger1Pos.sub(fingerPositions.finger1);
-                        const deltaPos2 = newFinger2Pos.sub(fingerPositions.finger2);
-
-                        const avgDelta = new THREE.Vector3().addVectors(deltaPos1, deltaPos2).multiplyScalar(0.5);
-
-                        const lastItem = placedItems[placedItems.length - 1];
-                        lastItem.position.add(avgDelta);
-
-                        // Update finger positions for the next frame
-                        fingerPositions.finger1 = newFinger1Pos;
-                        fingerPositions.finger2 = newFinger2Pos;
                     }
+                    prevTouchPosition = newPosition;
                 }
 
-                if (isPinching && placedItems.length > 0 && initialDistance !== null) {
-                    const currentDistance = session.inputSources[0].gamepad.axes[1] - session.inputSources[1].gamepad.axes[1];
+                // Handling two-finger dragging
+                if (isDraggingWithTwoFingers && currentInteractedItem) {
+                    const sources = session.inputSources;
+                    const currentFingerPositions = [
+                        new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
+                        new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
+                    ];
+
+                    const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
+                    const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
+
+                    currentInteractedItem.position.x += deltaX;
+                    currentInteractedItem.position.y += deltaY;
+
+                    initialFingerPositions = currentFingerPositions;
+                }
+
+                // Handling pinch to scale
+                if (isPinching && currentInteractedItem && initialDistance !== null) {
+                    const sources = session.inputSources;
+                    const currentDistance = sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1];
                     const scaleFactor = currentDistance / initialDistance;
 
-                    const lastItem = placedItems[placedItems.length - 1];
-                    lastItem.scale.multiplyScalar(scaleFactor);
+                    currentInteractedItem.scale.multiplyScalar(scaleFactor);
 
-                    initialDistance = currentDistance;
+                    initialDistance = currentDistance; // Update for smooth scaling
                 }
 
+                // Render the scene
                 renderer.render(scene, camera);
             });
         });
