@@ -212,6 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const deltaX = newPosition.x - prevTouchPosition.x;
 
                         currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
+
+                        // Debugging logs
+                        console.log("Rotation Delta:", deltaX);
+                        console.log("New Rotation Y:", currentInteractedItem.rotation.y);
                     }
                     prevTouchPosition = newPosition;
                 }
@@ -230,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentInteractedItem.position.x += deltaX;
                     currentInteractedItem.position.y += deltaY;
 
+                    // Debugging logs
+                    console.log("Dragging Delta X:", deltaX);
+                    console.log("Dragging Delta Y:", deltaY);
+
                     initialFingerPositions = currentFingerPositions;
                 }
 
@@ -240,9 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         Math.pow(sources[0].gamepad.axes[0] - sources[1].gamepad.axes[0], 2) +
                         Math.pow(sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1], 2)
                     );
-                    const scaleFactor = currentDistance / initialDistance;
+                    const scale = currentDistance / initialDistance;
 
-                    currentInteractedItem.scale.setScalar(currentInteractedItem.scale.x * scaleFactor);
+                    currentInteractedItem.scale.multiplyScalar(scale);
                     initialDistance = currentDistance;
                 }
 
