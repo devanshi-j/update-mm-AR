@@ -22,10 +22,10 @@ const setOpacity = (obj, opacity) => {
 };
 
 const deepClone = (obj) => {
-    const newObj = obj.clone(true); // Clone the entire object hierarchy
+    const newObj = obj.clone();
     newObj.traverse((o) => {
         if (o.isMesh) {
-            o.material = o.material.clone(); // Ensure materials are cloned as well
+            o.material = o.material.clone();
         }
     });
     return newObj;
@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let isDraggingWithTwoFingers = false;
         let initialFingerPositions = [];
         let currentInteractedItem = null;
+
+        const raycaster = new THREE.Raycaster();
+        const controller = renderer.xr.getController(0);
+        scene.add(controller);
 
         const itemButtons = document.querySelector("#item-buttons");
         const confirmButtons = document.querySelector("#confirm-buttons");
@@ -127,46 +131,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const raycaster = new THREE.Raycaster();
-        const tempMatrix = new THREE.Matrix4();
+        const selectItem = (item) => {
+            if (currentInteractedItem !== item) {
+                if (currentInteractedItem) {
+                    setOpacity(currentInteractedItem, 1.0); // Reset opacity for the previous item
+                }
+                currentInteractedItem = item;
+                setOpacity(currentInteractedItem, 0.7); // Highlight selected item with slightly transparent opacity
+            }
+        };
 
-        const getIntersectedObject = () => {
+        controller.addEventListener('selectstart', () => {
+            touchDown = true;
+
+            // Raycasting to check if we intersect with any placed items
+            const tempMatrix = new THREE.Matrix4();
             tempMatrix.identity().extractRotation(controller.matrixWorld);
+
             raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
             raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
             const intersects = raycaster.intersectObjects(placedItems, true);
 
             if (intersects.length > 0) {
-                return intersects[0].object.parent; // Assuming the object is part of a group
-            }
-
-            return null;
-        };
-
-        const controller = renderer.xr.getController(0);
-        scene.add(controller);
-
-        controller.addEventListener('selectstart', (event) => {
-            touchDown = true;
-
-            const intersectedObject = getIntersectedObject();
-
-            if (intersectedObject) {
-                currentInteractedItem = intersectedObject;
-            } else {
-                currentInteractedItem = null; // Reset if nothing is intersected
-            }
-
-            // Determine how many fingers are down
-            const sources = event.target.xrSession.inputSources;
-            if (sources.length === 1) {
-                // One finger for rotation
-                isDraggingWithTwoFingers = false; // Ensure dragging is disabled
-            } else if (sources.length === 2) {
-                // Two fingers for dragging
-                isDraggingWithTwoFingers = true;
-                // Initialize initialFingerPositions here if needed
+                selectItem(intersects[0].object.parent); // Assuming the object is in a group
             }
         });
 
@@ -216,34 +204,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     setOpacity(selectedItem, 1.0);
                 }
 
-                // Handle interactions with placed items
+                // Handle interactions with the selected item
                 if (touchDown && currentInteractedItem) {
                     const newPosition = controller.position.clone();
-
-                    if (isDraggingWithTwoFingers) {
-                        // Handle two-finger dragging
-                        const sources = session.inputSources;
-                        const currentFingerPositions = [
-                            new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
-                            new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
-                        ];
-
-                        const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
-                        const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
-
-                        // Move the object based on the average delta for both fingers
-                        currentInteractedItem.position.x += deltaX;
-                        currentInteractedItem.position.y -= deltaY; // Adjust for vertical dragging, invert if needed
-
-                        initialFingerPositions = currentFingerPositions; // Update initial positions for next frame
-                    } else {
-                        // One-finger rotation
-                        if (prevTouchPosition) {
-                            const deltaX = newPosition.x - prevTouchPosition.x;
-                            currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
-                        }
-                        prevTouchPosition = newPosition; // Update previous position
+                    if (prevTouchPosition) {
+                        const deltaX = newPosition.x - prevTouchPosition.x;
+                        currentInteractedItem.rotation.y += deltaX * 6.0; // Faster rotation
                     }
+                    prevTouchPosition = newPosition;
+                }
+
+                // Handling two-finger dragging
+                if (isDraggingWithTwoFingers && currentInteractedItem) {
+                    const sources = session.inputSources;
+                    const currentFingerPositions = [
+                        new THREE.Vector3(sources[0].gamepad.axes[0], sources[0].gamepad.axes[1], 0),
+                        new THREE.Vector3(sources[1].gamepad.axes[0], sources[1].gamepad.axes[1], 0)
+                    ];
+
+                    const deltaX = (currentFingerPositions[0].x - initialFingerPositions[0].x + currentFingerPositions[1].x - initialFingerPositions[1].x) / 2;
+                    const deltaY = (currentFingerPositions[0].y - initialFingerPositions[0].y + currentFingerPositions[1].y - initialFingerPositions[1].y) / 2;
+
+                    currentInteractedItem.position.x += deltaX;
+                    currentInteractedItem.position.y += deltaY;
+
+                    initialFingerPositions = currentFingerPositions;
                 }
 
                 // Handling pinch to scale
@@ -253,14 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         Math.pow(sources[0].gamepad.axes[0] - sources[1].gamepad.axes[0], 2) +
                         Math.pow(sources[0].gamepad.axes[1] - sources[1].gamepad.axes[1], 2)
                     );
-                    const scale = currentDistance / initialDistance;
+                    const scaleChange = currentDistance / initialDistance;
+                    currentInteractedItem.scale.multiplyScalar(scaleChange);
 
-                    // Apply the scaling to the whole group
-                    currentInteractedItem.scale.multiplyScalar(scale);
-
-                    initialDistance = currentDistance; // Update the initial distance for the next frame
+                    initialDistance = currentDistance;
                 }
 
+                // Render the scene
                 renderer.render(scene, camera);
             });
         });
