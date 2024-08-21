@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let isDraggingWithTwoFingers = false;
         let initialFingerPositions = [];
         let currentInteractedItem = null;
-        let rotationStart = null;
 
         const raycaster = new THREE.Raycaster();
         const controller = renderer.xr.getController(0);
@@ -156,14 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (intersects.length > 0) {
                 selectItem(intersects[0].object.parent); // Assuming the object is in a group
-                rotationStart = new THREE.Vector2(controller.position.x, controller.position.y);
             }
         });
 
         controller.addEventListener('selectend', () => {
             touchDown = false;
             prevTouchPosition = null;
-            rotationStart = null;
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -198,20 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedItem.position.copy(position);
                     }
 
-                    // Rotation based on swipe gesture
-                    if (touchDown && currentInteractedItem && rotationStart) {
+                    // Rotation and dragging logic
+                    if (touchDown && currentInteractedItem && !isPinching) {
                         const touchPosition = new THREE.Vector2(controller.position.x, controller.position.y);
-                        const swipeDelta = touchPosition.clone().sub(rotationStart);
-                        
-                        if (swipeDelta.length() > 0) {
-                            currentInteractedItem.rotation.y -= swipeDelta.x * 0.01; // Adjust rotation sensitivity as needed
-                        }
-                        
-                        rotationStart = touchPosition.clone(); // Update start position for continuous swipe
-                    } 
 
-                    // Dragging logic
-                    if (isDraggingWithTwoFingers && currentInteractedItem) {
+                        if (prevTouchPosition) {
+                            const delta = touchPosition.clone().sub(prevTouchPosition);
+                            if (delta.length() > 0) {
+                                currentInteractedItem.rotation.y -= delta.x * 5.0; // Rotate the object based on touch movement
+                            }
+                        }
+                        prevTouchPosition = touchPosition.clone();
+                    } else if (isDraggingWithTwoFingers && currentInteractedItem) {
                         const sessionSources = renderer.xr.getSession().inputSources;
 
                         if (sessionSources.length === 2) {
@@ -248,4 +243,4 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initialize();
-});
+}); 
