@@ -210,14 +210,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const animate = () => {
-            if (touchDown && currentInteractedItem && prevTouchPosition) {
+            if (touchDown && currentInteractedItem && !isDraggingWithTwoFingers) {
+                // Single-hand dragging to rotate
                 const newTouchPosition = new THREE.Vector2(renderer.xr.getSession().inputSources[0].gamepad.axes[0], renderer.xr.getSession().inputSources[0].gamepad.axes[1]);
-                const deltaX = newTouchPosition.x - prevTouchPosition.x;
-                const deltaY = newTouchPosition.y - prevTouchPosition.y;
+                if (prevTouchPosition) {
+                    const deltaX = newTouchPosition.x - prevTouchPosition.x;
+                    const deltaY = newTouchPosition.y - prevTouchPosition.y;
 
-                currentInteractedItem.rotation.y += deltaX * 5;
+                    currentInteractedItem.rotation.y += deltaX * 5;
+                    currentInteractedItem.rotation.x += deltaY * 5;
+                }
                 prevTouchPosition = newTouchPosition;
-            } else if (isPinching) {
+            } else if (isPinching && isDraggingWithTwoFingers) {
+                // Double-hand pinching to scale
                 const sessionSources = renderer.xr.getSession().inputSources;
                 if (sessionSources.length === 2) {
                     const newDistance = Math.sqrt(
@@ -231,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     initialDistance = newDistance;
                 }
             } else if (isDraggingWithTwoFingers && currentInteractedItem) {
+                // Double-hand dragging to move
                 const sessionSources = renderer.xr.getSession().inputSources;
 
                 if (sessionSources.length === 2) {
