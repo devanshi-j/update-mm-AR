@@ -48,21 +48,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(renderer.domElement);
         document.body.appendChild(arButton);
 
-        const itemNames = ['Chair','light','plant','rug'];
+        const itemNames = ['Chair', 'light', 'plant', 'rug'];
         const itemHeights = [0.3, 0.3, 0.3, 0.3];
         const items = [];
         const placedItems = [];
+        const models = {};
 
-        for (let i = 0; i < itemNames.length; i++) {
-            const model = await loadGLTF(`../assets/models/${itemNames[i]}/scene.gltf`);
-            normalizeModel(model.scene, itemHeights[i]);
+        const loadModel = async (itemName, itemHeight) => {
+            if (!models[itemName]) {
+                const model = await loadGLTF(`../assets/models/${itemName}/scene.gltf`);
+                normalizeModel(model.scene, itemHeight);
+                models[itemName] = model.scene;
+            }
+            return models[itemName];
+        };
+
+        itemNames.forEach((name, i) => {
             const item = new THREE.Group();
-            item.add(model.scene);
-            item.visible = false;
-            setOpacity(item, 0.5);
+            item.name = name;
             items.push(item);
             scene.add(item);
-        }
+        });
 
         let selectedItem = null;
         let prevTouchPosition = null;
@@ -72,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let isDraggingWithTwoFingers = false;
         let initialFingerPositions = [];
         let currentInteractedItem = null;
-        let rotationStart = null;
 
         const raycaster = new THREE.Raycaster();
         const controller = renderer.xr.getController(0);
@@ -83,7 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
         itemButtons.style.display = "block";
         confirmButtons.style.display = "none";
 
-        const select = (selectItem) => {
+        const select = async (selectItem) => {
+            if (!selectItem.children.length) {
+                const model = await loadModel(selectItem.name, itemHeights[itemNames.indexOf(selectItem.name)]);
+                selectItem.add(model);
+            }
             items.forEach((item) => {
                 item.visible = item === selectItem;
             });
@@ -112,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         items.forEach((item, i) => {
             const el = document.querySelector(`#item${i}`);
-            el.addEventListener('click', (e) => {
+            el.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                select(item);
+                await select(item);
             });
         });
 
@@ -127,25 +136,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 setOpacity(spawnItem, 1.0);
                 scene.add(spawnItem);
                 placedItems.push(spawnItem);
-                currentInteractedItem = spawnItem; // Set the current interacted item
-                cancelSelect(); // Hide the selected model and reset selection
+                currentInteractedItem = spawnItem;
+                cancelSelect();
             }
         });
 
         const selectItem = (item) => {
             if (currentInteractedItem !== item) {
                 if (currentInteractedItem) {
-                    setOpacity(currentInteractedItem, 1.0); // Reset opacity for the previous item
+                    setOpacity(currentInteractedItem, 1.0);
                 }
                 currentInteractedItem = item;
-                setOpacity(currentInteractedItem, 0.7); // Highlight selected item with slightly transparent opacity
+                setOpacity(currentInteractedItem, 0.7);
             }
         };
 
         controller.addEventListener('selectstart', () => {
             touchDown = true;
 
-            // Raycasting to check if we intersect with any placed items
             const tempMatrix = new THREE.Matrix4();
             tempMatrix.identity().extractRotation(controller.matrixWorld);
 
@@ -155,15 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const intersects = raycaster.intersectObjects(placedItems, true);
 
             if (intersects.length > 0) {
-                selectItem(intersects[0].object.parent); // Assuming the object is in a group
-                rotationStart = new THREE.Vector2(controller.position.x, controller.position.y);
+                selectItem(intersects[0].object.parent);
             }
         });
 
         controller.addEventListener('selectend', () => {
             touchDown = false;
             prevTouchPosition = null;
-            rotationStart = null;
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -187,64 +193,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            renderer.setAnimationLoop((timestamp, frame) => {
-                if (frame) {
-                    const referenceSpace = renderer.xr.getReferenceSpace();
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+            session.addEventListener("selectstart", async () => {
+                const frame = session.requestAnimationFrame;
 
-                    if (selectedItem && hitTestResults.length > 0) {
-                        const hit = hitTestResults[0];
-                        const position = new THREE.Vector3().setFromMatrixPosition(hit.getPose(referenceSpace).transform.matrix);
-                        selectedItem.position.copy(position);
-                    }
+                const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-                    // Rotation based on swipe gesture
-                    if (touchDown && currentInteractedItem && rotationStart) {
-                        const touchPosition = new THREE.Vector2(controller.position.x, controller.position.y);
-                        const swipeDelta = touchPosition.clone().sub(rotationStart);
-                        
-                        if (swipeDelta.length() > 0) {
-                            currentInteractedItem.rotation.y -= swipeDelta.x * 0.01; // Adjust rotation sensitivity as needed
-                        }
-                        
-                        rotationStart = touchPosition.clone(); // Update start position for continuous swipe
-                    } 
-
-                    // Dragging logic
-                    if (isDraggingWithTwoFingers && currentInteractedItem) {
-                        const sessionSources = renderer.xr.getSession().inputSources;
-
-                        if (sessionSources.length === 2) {
-                            const newFingerPositions = [
-                                new THREE.Vector3(sessionSources[0].gamepad.axes[0], sessionSources[0].gamepad.axes[1], 0),
-                                new THREE.Vector3(sessionSources[1].gamepad.axes[0], sessionSources[1].gamepad.axes[1], 0)
-                            ];
-
-                            const movementVector = newFingerPositions[0].clone().sub(initialFingerPositions[0])
-                                .add(newFingerPositions[1].clone().sub(initialFingerPositions[1]));
-
-                            currentInteractedItem.position.add(new THREE.Vector3(movementVector.x, 0, -movementVector.y));
-                            initialFingerPositions = newFingerPositions;
-                        }
-                    } else if (isPinching && currentInteractedItem) {
-                        const sessionSources = renderer.xr.getSession().inputSources;
-
-                        if (sessionSources.length === 2) {
-                            const newDistance = Math.sqrt(
-                                Math.pow(sessionSources[0].gamepad.axes[0] - sessionSources[1].gamepad.axes[0], 2) +
-                                Math.pow(sessionSources[0].gamepad.axes[1] - sessionSources[1].gamepad.axes[1], 2)
-                            );
-
-                            const scaleChange = newDistance / initialDistance;
-                            currentInteractedItem.scale.multiplyScalar(scaleChange);
-                            initialDistance = newDistance;
-                        }
+                if (hitTestResults.length > 0) {
+                    const hitPose = hitTestResults[0].getPose(renderer.xr.getReferenceSpace());
+                    const pos = hitPose.transform.position;
+                    if (selectedItem) {
+                        selectedItem.position.set(pos.x, pos.y, pos.z);
+                        selectedItem.visible = true;
                     }
                 }
-
-                renderer.render(scene, camera);
             });
         });
+
+        const animate = () => {
+            if (touchDown && currentInteractedItem && prevTouchPosition) {
+                const newTouchPosition = new THREE.Vector2(renderer.xr.getSession().inputSources[0].gamepad.axes[0], renderer.xr.getSession().inputSources[0].gamepad.axes[1]);
+                const deltaX = newTouchPosition.x - prevTouchPosition.x;
+                const deltaY = newTouchPosition.y - prevTouchPosition.y;
+
+                currentInteractedItem.rotation.y += deltaX * 5;
+                prevTouchPosition = newTouchPosition;
+            } else if (isPinching) {
+                const sessionSources = renderer.xr.getSession().inputSources;
+                if (sessionSources.length === 2) {
+                    const newDistance = Math.sqrt(
+                        Math.pow(sessionSources[0].gamepad.axes[0] - sessionSources[1].gamepad.axes[0], 2) +
+                        Math.pow(sessionSources[0].gamepad.axes[1] - sessionSources[1].gamepad.axes[1], 2)
+                    );
+
+                    const scaleFactor = newDistance / initialDistance;
+                    currentInteractedItem.scale.multiplyScalar(scaleFactor);
+
+                    initialDistance = newDistance;
+                }
+            } else if (isDraggingWithTwoFingers && currentInteractedItem) {
+                const sessionSources = renderer.xr.getSession().inputSources;
+
+                if (sessionSources.length === 2) {
+                    const newFingerPositions = [
+                        new THREE.Vector3(sessionSources[0].gamepad.axes[0], sessionSources[0].gamepad.axes[1], 0),
+                        new THREE.Vector3(sessionSources[1].gamepad.axes[0], sessionSources[1].gamepad.axes[1], 0)
+                    ];
+
+                    const movementVector = newFingerPositions[0].clone().sub(initialFingerPositions[0])
+                        .add(newFingerPositions[1].clone().sub(initialFingerPositions[1]));
+
+                    currentInteractedItem.position.add(movementVector);
+
+                    initialFingerPositions = newFingerPositions;
+                }
+            }
+
+            renderer.setAnimationLoop(animate);
+            renderer.render(scene, camera);
+        };
+
+        animate();
     };
 
     initialize();
