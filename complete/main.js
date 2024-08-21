@@ -71,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let selectedItem = null;
+        let prevTouchPosition = null;
+        let touchDown = false;
         let isPinching = false;
         let initialDistance = null;
         let isDraggingWithTwoFingers = false;
@@ -150,6 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         controller.addEventListener('selectstart', () => {
+            touchDown = true;
+
             const tempMatrix = new THREE.Matrix4();
             tempMatrix.identity().extractRotation(controller.matrixWorld);
 
@@ -160,11 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (intersects.length > 0) {
                 selectItem(intersects[0].object.parent);
+                prevTouchPosition = new THREE.Vector2(
+                    renderer.xr.getSession().inputSources[0].gamepad.axes[0],
+                    renderer.xr.getSession().inputSources[0].gamepad.axes[1]
+                );
             }
         });
 
         controller.addEventListener('selectend', () => {
-            // Removed single-hand drag code
+            touchDown = false;
+            prevTouchPosition = null;
         });
 
         renderer.xr.addEventListener("sessionstart", async () => {
@@ -204,39 +213,53 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // New swipe gesture implementation
-        let swipeStartPos = null;
-        let swipeEndPos = null;
-        const swipeThreshold = 30; // Threshold for swipe detection
-
-        document.addEventListener('touchstart', (event) => {
-            if (event.touches.length === 1 && currentInteractedItem) {
-                swipeStartPos = event.touches[0].pageX; // Record the start position of the swipe
-            }
-        });
-
-        document.addEventListener('touchend', (event) => {
-            if (swipeStartPos !== null && currentInteractedItem) {
-                swipeEndPos = event.changedTouches[0].pageX; // Record the end position of the swipe
-                const swipeDistance = swipeEndPos - swipeStartPos;
-
-                // Check if the swipe distance exceeds the threshold
-                if (Math.abs(swipeDistance) > swipeThreshold) {
-                    if (swipeDistance > 0) {
-                        currentInteractedItem.rotation.y -= Math.PI / 4;  // Rotate right
-                    } else {
-                        currentInteractedItem.rotation.y += Math.PI / 4;  // Rotate left
-                    }
-                }
-
-                // Reset swipe positions
-                swipeStartPos = null;
-                swipeEndPos = null;
-            }
-        });
-
         const animate = () => {
-            // Update the scene as needed (e.g., handling pinching and dragging with two fingers)
+            if (touchDown && currentInteractedItem && prevTouchPosition) {
+                const newTouchPosition = new THREE.Vector2(
+                    renderer.xr.getSession().inputSources[0].gamepad.axes[0],
+                    renderer.xr.getSession().inputSources[0].gamepad.axes[1]
+                );
+                const deltaX = newTouchPosition.x - prevTouchPosition.x;
+                const deltaY = newTouchPosition.y - prevTouchPosition.y;
+
+                currentInteractedItem.rotation.y += deltaX * 5; // Adjust rotation sensitivity
+
+                // Dragging (move object in the horizontal plane)
+                const movementVector = new THREE.Vector3(deltaX, 0, -deltaY);
+                currentInteractedItem.position.add(movementVector);
+
+                prevTouchPosition = newTouchPosition;
+            } else if (isPinching) {
+                const sessionSources = renderer.xr.getSession().inputSources;
+                if (sessionSources.length === 2) {
+                    const newDistance = Math.sqrt(
+                        Math.pow(sessionSources[0].gamepad.axes[0] - sessionSources[1].gamepad.axes[0], 2) +
+                        Math.pow(sessionSources[0].gamepad.axes[1] - sessionSources[1].gamepad.axes[1], 2)
+                    );
+
+                    const scaleFactor = newDistance / initialDistance;
+                    currentInteractedItem.scale.multiplyScalar(scaleFactor);
+
+                    initialDistance = newDistance;
+                }
+            } else if (isDraggingWithTwoFingers && currentInteractedItem) {
+                const sessionSources = renderer.xr.getSession().inputSources;
+
+                if (sessionSources.length === 2) {
+                    const newFingerPositions = [
+                        new THREE.Vector3(sessionSources[0].gamepad.axes[0], sessionSources[0].gamepad.axes[1], 0),
+                        new THREE.Vector3(sessionSources[1].gamepad.axes[0], sessionSources[1].gamepad.axes[1], 0)
+                    ];
+
+                    const movementVector = newFingerPositions[0].clone().sub(initialFingerPositions[0])
+                        .add(newFingerPositions[1].clone().sub(initialFingerPositions[1]));
+
+                    currentInteractedItem.position.add(movementVector);
+
+                    initialFingerPositions = newFingerPositions;
+                }
+            }
+
             renderer.setAnimationLoop(animate);
             renderer.render(scene, camera);
         };
