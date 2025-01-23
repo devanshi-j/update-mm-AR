@@ -1,0 +1,11 @@
+Model Information:
+* title:	sofa
+* source:	https://sketchfab.com/3d-models/sofa-566030e0a303435889fffa77503354a1
+* author:	Unclearness (https://sketchfab.com/Unclearness)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "sofa" (https://sketchfab.com/3d-models/sofa-566030e0a303435889fffa77503354a1) by Unclearness (https://sketchfab.com/Unclearness) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
