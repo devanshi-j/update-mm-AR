@@ -38,15 +38,15 @@ const itemCategories = {
         { name: "lamp2", height: 0.35 },
         { name: "lamp3", height: 0.28 }
     ],
-    sofa: [
-        { name: "sofa1", height: 0.1 },
-        { name: "sofa2", height: 0.12 },
-        { name: "sofa3", height: 0.15 }
+    chair: [
+        { name: "chair1", height: 0.1 },
+        { name: "chair2", height: 0.12 },
+        { name: "chair3", height: 0.15 }
     ],
     table: [
-        { name: "table1", height: 0.2 },
-        { name: "table2", height: 0.25 },
-        { name: "table3", height: 0.22 }
+        { name: "shelf1", height: 0.2 },
+        { name: "shelf2", height: 0.25 },
+        { name: "shelf3", height: 0.22 }
     ]
 };
 
