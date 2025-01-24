@@ -152,23 +152,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         };
-
-        const onTouchMove = (event) => {
+ const onTouchMove = (event) => {
             event.preventDefault();
             
-            if (isRotating && event.touches.length === 1) {
-                // Always rotate around world Y-axis (horizontal)
+            if (isRotating && event.touches.length === 1 && selectedObject) {
+                // Calculate rotation based on camera's world orientation
                 const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX * 0.01);
+                
+                // Create a rotation matrix aligned with camera's world Y-axis
+                const cameraWorldDirection = new THREE.Vector3();
+                camera.getWorldDirection(cameraWorldDirection);
+                const rotationAxis = new THREE.Vector3(0, 1, 0);
+                
+                selectedObject.rotateOnAxis(rotationAxis, deltaX * 0.01);
                 previousTouchX = event.touches[0].pageX;
             } else if (event.touches.length === 2 && selectedObject) {
-                // Handle both dragging and scaling with two fingers
+                // Two-finger interaction (dragging/scaling) remains the same
                 const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
                 const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
                 const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
 
                 if (isDragging) {
-                    // Handle dragging
                     const deltaX = (currentCenterX - previousTouchX) * 0.01;
                     const deltaY = (currentCenterY - previousTouchY) * 0.01;
                     selectedObject.position.x += deltaX;
@@ -176,11 +180,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (isScaling) {
-                    // Handle scaling
                     const scaleFactor = currentPinchDistance / previousPinchDistance;
                     if (scaleFactor !== 1) {
                         const newScale = selectedObject.scale.x * scaleFactor;
-                        // Limit scaling between 0.5 and 2 times original size
                         if (newScale >= 0.5 && newScale <= 2) {
                             selectedObject.scale.multiplyScalar(scaleFactor);
                         }
@@ -192,7 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 previousTouchY = currentCenterY;
             }
         };
-
         const onTouchEnd = (event) => {
             if (event.touches.length === 0) {
                 isRotating = false;
