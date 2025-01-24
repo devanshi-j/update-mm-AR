@@ -152,48 +152,66 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         };
- const onTouchMove = (event) => {
-            event.preventDefault();
-            
-            if (isRotating && event.touches.length === 1 && selectedObject) {
-                // Calculate rotation based on camera's world orientation
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                
-                // Create a rotation matrix aligned with camera's world Y-axis
-                const cameraWorldDirection = new THREE.Vector3();
-                camera.getWorldDirection(cameraWorldDirection);
-                const rotationAxis = new THREE.Vector3(0, 1, 0);
-                
-                selectedObject.rotateOnAxis(rotationAxis, deltaX * 0.01);
-                previousTouchX = event.touches[0].pageX;
-            } else if (event.touches.length === 2 && selectedObject) {
-                // Two-finger interaction (dragging/scaling) remains the same
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+const onTouchMove = (event) => {
+    event.preventDefault();
+    
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        // Rotation logic remains the same
+        const deltaX = event.touches[0].pageX - previousTouchX;
+        
+        const rotationAxis = new THREE.Vector3(0, 1, 0);
+        selectedObject.rotateOnAxis(rotationAxis, deltaX * 0.01);
+        previousTouchX = event.touches[0].pageX;
+    } else if (event.touches.length === 2 && selectedObject) {
+        // Separate dragging and scaling logic
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
 
-                if (isDragging) {
-                    const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                    const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                    selectedObject.position.x += deltaX;
-                    selectedObject.position.z += deltaY;
-                }
+        // Dragging using camera's world plane
+        const cameraWorldDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraWorldDirection);
+        
+        // Project dragging on a plane perpendicular to the camera's view direction
+        const dragPlane = new THREE.Plane(cameraWorldDirection, 0);
+        const dragRay = new THREE.Ray();
+        
+        // Convert previous and current touch positions to world space
+        const previousNormalizedX = (previousTouchX / window.innerWidth) * 2 - 1;
+        const previousNormalizedY = -(previousTouchY / window.innerHeight) * 2 + 1;
+        const currentNormalizedX = (currentCenterX / window.innerWidth) * 2 - 1;
+        const currentNormalizedY = -(currentCenterY / window.innerHeight) * 2 + 1;
+        
+        const previousWorldPos = new THREE.Vector3();
+        const currentWorldPos = new THREE.Vector3();
+        
+        dragRay.origin.copy(camera.position);
+        
+        dragRay.direction.set(previousNormalizedX, previousNormalizedY, 0.5).unproject(camera).sub(camera.position).normalize();
+        dragPlane.intersectRay(dragRay, previousWorldPos);
+        
+        dragRay.direction.set(currentNormalizedX, currentNormalizedY, 0.5).unproject(camera).sub(camera.position).normalize();
+        dragPlane.intersectRay(dragRay, currentWorldPos);
+        
+        // Calculate world space drag delta
+        const dragDelta = currentWorldPos.sub(previousWorldPos);
+        selectedObject.position.add(dragDelta);
 
-                if (isScaling) {
-                    const scaleFactor = currentPinchDistance / previousPinchDistance;
-                    if (scaleFactor !== 1) {
-                        const newScale = selectedObject.scale.x * scaleFactor;
-                        if (newScale >= 0.5 && newScale <= 2) {
-                            selectedObject.scale.multiplyScalar(scaleFactor);
-                        }
-                    }
-                }
-
-                previousPinchDistance = currentPinchDistance;
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
+        // Scaling logic
+        const scaleFactor = currentPinchDistance / previousPinchDistance;
+        if (scaleFactor !== 1) {
+            const newScale = selectedObject.scale.x * scaleFactor;
+            if (newScale >= 0.5 && newScale <= 2) {
+                selectedObject.scale.multiplyScalar(scaleFactor);
             }
-        };
+        }
+
+        previousPinchDistance = currentPinchDistance;
+        previousTouchX = currentCenterX;
+        previousTouchY = currentCenterY;
+    }
+};
+             
         const onTouchEnd = (event) => {
             if (event.touches.length === 0) {
                 isRotating = false;
