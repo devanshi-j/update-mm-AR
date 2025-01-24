@@ -157,9 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             
             if (isRotating && event.touches.length === 1) {
-                // Horizontal rotation only
+                // Always rotate around world Y-axis (horizontal)
                 const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotation.y += deltaX * 0.01;
+                selectedObject.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX * 0.01);
                 previousTouchX = event.touches[0].pageX;
             } else if (event.touches.length === 2 && selectedObject) {
                 // Handle both dragging and scaling with two fingers
@@ -202,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
         renderer.domElement.addEventListener('touchend', onTouchEnd, false);
