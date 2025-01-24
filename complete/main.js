@@ -43,7 +43,7 @@ const itemCategories = {
         { name: "chair2", height: 0.12 },
         { name: "chair3", height: 0.15 }
     ],
-    table: [
+    shelf: [
         { name: "shelf1", height: 0.2 },
         { name: "shelf2", height: 0.25 },
         { name: "shelf3", height: 0.22 }
