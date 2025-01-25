@@ -246,6 +246,40 @@
             display: none;
             z-index: 1000;
         }
+
+        #interaction-modes {
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: flex;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+}
+
+#interaction-modes button {
+    font-size: 16px;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+#interaction-modes button.active {
+    background-color: #FFF44F;
+    color: black;
+}
+
+#interaction-modes button:hover {
+    transform: scale(1.05);
+}
     </style>
 </head>
 <body>
@@ -285,7 +319,12 @@
             </div>
         </div>
     </div>
-
+<!-- Interaction Mode Buttons -->
+<div id="interaction-modes">
+    <button id="move-mode" class="button-shadow">Move</button>
+    <button id="rotate-mode" class="button-shadow">Rotate</button>
+    <button id="scale-mode" class="button-shadow">Scale</button>
+</div>
     <!-- Confirm Buttons -->
     <div id="confirm-buttons">
         <button id="place" class="button-shadow">Place</button>
