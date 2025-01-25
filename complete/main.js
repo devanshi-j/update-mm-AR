@@ -37,10 +37,10 @@ const itemCategories = {
         { name: "lamp2", height: 0.35 },
         { name: "lamp3", height: 0.28 }
     ],
-    sofa: [
-        { name: "sofa1", height: 0.1 },
-        { name: "sofa2", height: 0.12 },
-        { name: "sofa3", height: 0.15 }
+    chair: [
+        { name: "chair1", height: 0.1 },
+        { name: "chair2", height: 0.12 },
+        { name: "chair3", height: 0.15 }
     ],
     table: [
         { name: "table1", height: 0.2 },
@@ -250,13 +250,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.stopPropagation();
                 const clickedSubmenu = icon.querySelector(".submenu");
                 
+                // Prevent submenu from closing when clicking on inner item
+                if (event.target.closest('.submenu-item')) {
+                    return;
+                }
+                
+                // Toggle clicked submenu, close others
                 document.querySelectorAll('.submenu').forEach(submenu => {
                     if (submenu !== clickedSubmenu) {
                         submenu.classList.remove('open');
                     }
                 });
                 
-                clickedSubmenu.classList.toggle("open");
+                // If not clicking a submenu item, toggle the submenu
+                if (!event.target.closest('.submenu-item')) {
+                    clickedSubmenu.classList.toggle("open");
+                }
             });
         });
 
