@@ -1,0 +1,11 @@
+Model Information:
+* title:	Tables And Chairs
+* source:	https://sketchfab.com/3d-models/tables-and-chairs-7193b868ef684578afd230a59ef9be8f
+* author:	OfekDavid (https://sketchfab.com/OfekDavid)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Tables And Chairs" (https://sketchfab.com/3d-models/tables-and-chairs-7193b868ef684578afd230a59ef9be8f) by OfekDavid (https://sketchfab.com/OfekDavid) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
