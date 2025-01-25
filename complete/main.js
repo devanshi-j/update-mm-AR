@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSource = null;
         let hitTestSourceRequested = false;
 
-        let currentInteractionMode = 'none'; // New interaction mode tracker
+        let currentInteractionMode = 'move';
         const INTERACTION_MODES = {
             NONE: 'none',
             MOVE: 'move',
@@ -123,11 +123,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const submenuToggles = document.querySelectorAll(".submenu-toggle");
         const mainThumbnails = document.querySelectorAll(".main-thumbnail");
 
-        // New interaction mode buttons
+        // Interaction mode buttons
         const moveModeButton = document.getElementById("move-mode");
         const rotateModeButton = document.getElementById("rotate-mode");
         const scaleModeButton = document.getElementById("scale-mode");
 
+        // Menu interaction
+        menuButton.addEventListener("click", () => {
+            sidebarMenu.classList.add("open");
+        });
+
+        closeButton.addEventListener("click", () => {
+            sidebarMenu.classList.remove("open");
+            document.querySelectorAll(".submenu").forEach(submenu => {
+                submenu.classList.remove("active");
+            });
+        });
+
+        // Interaction mode setup
         moveModeButton.addEventListener("click", () => {
             currentInteractionMode = INTERACTION_MODES.MOVE;
             updateInteractionModeUI();
@@ -161,16 +174,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        menuButton.addEventListener("click", () => {
-            sidebarMenu.classList.add("active");
-        });
-
-        closeButton.addEventListener("click", () => {
-            sidebarMenu.classList.remove("active");
-            document.querySelectorAll(".submenu").forEach(submenu => {
-                submenu.classList.remove("active");
-            });
-        });
+        // Initial mode setup
+        updateInteractionModeUI();
 
         mainThumbnails.forEach(thumbnail => {
             thumbnail.addEventListener("click", (e) => {
@@ -195,7 +200,6 @@ document.addEventListener("DOMContentLoaded", () => {
             touchState.touchCount = event.touches.length;
 
             if (event.touches.length === 1) {
-                // Single finger interaction setup
                 touchState.startTouches = [event.touches[0]];
                 
                 const touch = event.touches[0];
@@ -286,13 +290,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        // Add these event listeners
         renderer.domElement.addEventListener('touchstart', handleTouchStart, false);
         renderer.domElement.addEventListener('touchmove', handleTouchMove, false);
         renderer.domElement.addEventListener('touchend', handleTouchEnd, false);
 
         const loadARModel = async (modelCategory) => {
-            // Function to load models dynamically based on the category
             if (loadedModels.has(modelCategory)) {
                 return loadedModels.get(modelCategory);
             }
