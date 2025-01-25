@@ -95,10 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
 
-        const rotateButton = document.getElementById("rotate-button");
-        const dragButton = document.getElementById("drag-button");
-        const scaleButton = document.getElementById("scale-button");
-        const interactionButtons = [rotateButton, dragButton, scaleButton];
+        const rotateButton = document.getElementById("rotate-mode");
+        const moveButton = document.getElementById("move-mode");
+        const scaleButton = document.getElementById("scale-mode");
+        const interactionButtons = [moveButton, rotateButton, scaleButton];
 
         const loadedModels = new Map();
         const placedItems = [];
@@ -123,9 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
             interactionMode = 'rotate';
         });
 
-        dragButton.addEventListener('click', () => {
+        moveButton.addEventListener('click', () => {
             resetInteractionButtons();
-            dragButton.classList.add('active');
+            moveButton.classList.add('active');
             interactionMode = 'drag';
         });
 
