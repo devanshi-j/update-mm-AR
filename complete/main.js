@@ -1,8 +1,9 @@
-import { loadGLTF } from "../libs/loader.js";
+
+       import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
-// Utility functions remain the same
+// Utility functions
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
@@ -52,7 +53,7 @@ const itemCategories = {
 
 document.addEventListener("DOMContentLoaded", () => {
     const initialize = async () => {
-        // Scene and AR setup remains the same
+        // Scene and AR setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -112,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 button.addEventListener('click', () => {
                     currentMode = currentMode === mode ? InteractionMode.NONE : mode;
-                    // Update button styles
                     document.querySelectorAll('.mode-button').forEach(btn => {
                         btn.style.backgroundColor = '#ffffff';
                     });
@@ -137,6 +137,37 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         createModeButtons();
+
+        // Submenu functionality
+        const setupSubmenus = () => {
+            const menuItems = document.querySelectorAll('.menu-item');
+            const submenus = document.querySelectorAll('.submenu');
+            
+            // Hide all submenus initially
+            submenus.forEach(submenu => submenu.style.display = 'none');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const targetSubmenu = document.querySelector(item.getAttribute('data-submenu'));
+                    
+                    // Toggle clicked submenu
+                    if (targetSubmenu) {
+                        const isVisible = targetSubmenu.style.display === 'block';
+                        
+                        // Hide all submenus first
+                        submenus.forEach(submenu => submenu.style.display = 'none');
+                        
+                        // Show target submenu if it was hidden
+                        if (!isVisible) {
+                            targetSubmenu.style.display = 'block';
+                        }
+                    }
+                });
+            });
+        };
 
         // Raycaster and touch setup
         const raycaster = new THREE.Raycaster();
@@ -166,14 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSource = null;
         let hitTestSourceRequested = false;
 
-        // Calculate distance between two touch points
+        // Touch event handlers
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
 
-        // Touch event handlers
         const onTouchStart = (event) => {
             event.preventDefault();
             
@@ -209,18 +239,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     break;
 
                 case InteractionMode.DRAG:
-                    if (event.touches.length === 2) {
-                        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                        
-                        const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                        const deltaY = (currentCenterY - previousTouchY) * 0.01;
+                    if (event.touches.length === 1) {
+                        const deltaX = (event.touches[0].pageX - previousTouchX) * 0.01;
+                        const deltaY = (event.touches[0].pageY - previousTouchY) * 0.01;
                         
                         selectedObject.position.x += deltaX;
                         selectedObject.position.z += deltaY;
                         
-                        previousTouchX = currentCenterX;
-                        previousTouchY = currentCenterY;
+                        previousTouchX = event.touches[0].pageX;
+                        previousTouchY = event.touches[0].pageY;
                     }
                     break;
 
@@ -260,31 +287,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const cancelButton = document.querySelector("#cancel");
 
         // Menu event handlers
-        document.addEventListener("click", (event) => {
-            const isClickInsideMenu = sidebarMenu?.contains(event.target);
-            const isClickOnMenuButton = menuButton?.contains(event.target);
-            const isMenuOpen = sidebarMenu?.classList.contains("open");
-            
-            if (!isClickInsideMenu && !isClickOnMenuButton && isMenuOpen) {
+        const setupMenuHandlers = () => {
+            document.addEventListener("click", (event) => {
+                const isClickInsideMenu = sidebarMenu?.contains(event.target);
+                const isClickOnMenuButton = menuButton?.contains(event.target);
+                const isMenuOpen = sidebarMenu?.classList.contains("open");
+                
+                if (!isClickInsideMenu && !isClickOnMenuButton && isMenuOpen) {
+                    sidebarMenu.classList.remove("open");
+                    closeButton.style.display = "none";
+                    menuButton.style.display = "block";
+                }
+            });
+
+            menuButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                sidebarMenu.classList.add("open");
+                menuButton.style.display = "none";
+                closeButton.style.display = "block";
+            });
+
+            closeButton.addEventListener("click", (event) => {
+                event.stopPropagation();
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
-            }
-        });
-
-        menuButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sidebarMenu.classList.add("open");
-            menuButton.style.display = "none";
-            closeButton.style.display = "block";
-        });
-
-        closeButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sidebarMenu.classList.remove("open");
-            closeButton.style.display = "none";
-            menuButton.style.display = "block";
-        });
+            });
+        };
 
         // Model management functions
         const showModel = (item) => {
@@ -324,35 +353,42 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        // Load models
-        for (const category in itemCategories) {
-            for (const itemInfo of itemCategories[category]) {
-                try {
-                    const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
-                    normalizeModel(model.scene, itemInfo.height);
+        // Load models and set up thumbnails
+        const loadModelsAndSetupThumbnails = async () => {
+            for (const category in itemCategories) {
+                for (const itemInfo of itemCategories[category]) {
+                    try {
+                        const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
+                        normalizeModel(model.scene, itemInfo.height);
 
-                    const item = new THREE.Group();
-                    item.add(model.scene);
-                    
-                    loadedModels.set(`${category}-${itemInfo.name}`, item);
+                        const item = new THREE.Group();
+                        item.add(model.scene);
+                        
+                        loadedModels.set(`${category}-${itemInfo.name}`, item);
 
-                    const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
-                    if (thumbnail) {
-                        thumbnail.addEventListener("click", (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const model = loadedModels.get(`${category}-${itemInfo.name}`);
-                            if (model) {
-                                const modelClone = deepClone(model);
-                                showModel(modelClone);
-                            }
-                        });
+                        const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
+                        if (thumbnail) {
+                            thumbnail.addEventListener("click", (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const model = loadedModels.get(`${category}-${itemInfo.name}`);
+                                if (model) {
+                                    const modelClone = deepClone(model);
+                                    showModel(modelClone);
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
                     }
-                } catch (error) {
-                    console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
                 }
             }
-        }
+        };
+
+        // Initialize UI and event handlers
+        setupMenuHandlers();
+        setupSubmenus();
+        await loadModelsAndSetupThumbnails();
 
         // Button Event Listeners
         placeButton.addEventListener("click", placeModel);
