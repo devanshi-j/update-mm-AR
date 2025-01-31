@@ -70,10 +70,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Initialize AR first
        // AR Button Initialization
-const arButton = ARButton.createButton(renderer, {
-    requiredFeatures: ["hit-test"],
-    optionalFeatures: ["dom-overlay"],
-    domOverlay: { root: document.body },
+// Initialize AR Button and WebXR session
+document.body.appendChild(
+    ARButton.createButton(renderer, {
+        requiredFeatures: ["hit-test"],
+        optionalFeatures: ["dom-overlay"],
+        domOverlay: { root: document.body },
+    })
+);
+
+// Handle XR session start
+renderer.xr.addEventListener("sessionstart", () => {
+    console.log("AR session started");
+});
+
+renderer.xr.addEventListener("sessionend", () => {
+    console.log("AR session ended");
 });
 
 document.body.appendChild(arButton);
@@ -376,15 +388,7 @@ const onTouchEnd = (event) => {
                 }
             }
 
-            renderer.xr.addEventListener("sessionstart", () => {
-    console.log("AR Session Started");
-    hitTestSourceRequested = false;
-});
-
-renderer.xr.addEventListener("sessionend", () => {
-    console.log("AR Session Ended");
-    hitTestSourceRequested = false;
-});
+           
 
 
             renderer.render(scene, camera);
