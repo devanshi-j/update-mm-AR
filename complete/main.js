@@ -137,37 +137,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
         createModeButtons();
 
-        // Submenu functionality
-        const setupSubmenus = () => {
-            const menuItems = document.querySelectorAll('.menu-item');
-            const submenus = document.querySelectorAll('.submenu');
+      const setupSubmenus = () => {
+    const menuItems = document.querySelectorAll('.menu-item');
+    const submenus = document.querySelectorAll('.submenu');
+    let activeSubmenu = null;
+    
+    // Hide all submenus initially
+    submenus.forEach(submenu => submenu.style.display = 'none');
+    
+    menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             
-            // Hide all submenus initially
-            submenus.forEach(submenu => submenu.style.display = 'none');
+            const targetSubmenu = document.querySelector(item.getAttribute('data-submenu'));
             
-            menuItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const targetSubmenu = document.querySelector(item.getAttribute('data-submenu'));
-                    
-                    // Toggle clicked submenu
-                    if (targetSubmenu) {
-                        const isVisible = targetSubmenu.style.display === 'block';
-                        
-                        // Hide all submenus first
-                        submenus.forEach(submenu => submenu.style.display = 'none');
-                        
-                        // Show target submenu if it was hidden
-                        if (!isVisible) {
-                            targetSubmenu.style.display = 'block';
-                        }
+            if (targetSubmenu) {
+                // If clicking the same menu item that's already open
+                if (activeSubmenu === targetSubmenu) {
+                    // Close it
+                    targetSubmenu.style.display = 'none';
+                    activeSubmenu = null;
+                } else {
+                    // Close any open submenu
+                    if (activeSubmenu) {
+                        activeSubmenu.style.display = 'none';
                     }
-                });
-            });
-        };
+                    // Open the clicked submenu
+                    targetSubmenu.style.display = 'block';
+                    activeSubmenu = targetSubmenu;
+                }
+            }
+        });
+    });
 
+    // Event delegation for submenu items
+    document.addEventListener('click', (e) => {
+        const submenuItem = e.target.closest('.submenu-item');
+        if (submenuItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Handle submenu item click
+            const category = submenuItem.getAttribute('data-category');
+            const itemName = submenuItem.getAttribute('data-item');
+            const modelId = `${category}-${itemName}`;
+            
+            const model = loadedModels.get(modelId);
+            if (model) {
+                const modelClone = deepClone(model);
+                showModel(modelClone);
+            }
+            
+            // Don't close the submenu when clicking items
+            return;
+        }
+        
+        // Close submenu only if clicking outside both menu items and submenus
+        if (!e.target.closest('.menu-item') && !e.target.closest('.submenu')) {
+            if (activeSubmenu) {
+                activeSubmenu.style.display = 'none';
+                activeSubmenu = null;
+            }
+        }
+    });
+};
         // Raycaster and touch setup
         const raycaster = new THREE.Raycaster();
         const touches = new THREE.Vector2();
