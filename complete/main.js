@@ -81,63 +81,47 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(arButton);
 
         // Interaction mode management
-        const InteractionMode = {
-            NONE: 'none',
-            ROTATE: 'rotate',
-            DRAG: 'drag',
-            SCALE: 'scale'
-        };
+       // Define interaction modes
+const InteractionMode = {
+    NONE: 'none',
+    ROTATE: 'rotate',
+    DRAG: 'drag',
+    SCALE: 'scale'
+};
+
+let currentMode = InteractionMode.NONE;
+
+// Handle mode button functionality
+const initializeModeButtons = () => {
+    const rotateButton = document.getElementById('rotate-btn');
+    const dragButton = document.getElementById('drag-btn');
+    const scaleButton = document.getElementById('scale-btn');
+
+    const handleModeButtonClick = (clickedButton, mode) => {
+        // Toggle mode
+        currentMode = currentMode === mode ? InteractionMode.NONE : mode;
         
-        let currentMode = InteractionMode.NONE;
+        // Reset all buttons to default state
+        document.querySelectorAll('.mode-button').forEach(btn => {
+            btn.style.backgroundColor = '#ffffff';
+            btn.classList.remove('active');
+        });
+        
+        // Update clicked button state if mode is active
+        if (currentMode === mode) {
+            clickedButton.style.backgroundColor = '#a0a0a0';
+            clickedButton.classList.add('active');
+        }
+    };
 
-        // Create mode selection buttons
-        const createModeButtons = () => {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.position = 'fixed';
-            buttonContainer.style.bottom = '20px';
-            buttonContainer.style.left = '50%';
-            buttonContainer.style.transform = 'translateX(-50%)';
-            buttonContainer.style.display = 'flex';
-            buttonContainer.style.gap = '10px';
-            buttonContainer.style.zIndex = '1000';
+    // Add click handlers to existing buttons
+    rotateButton.addEventListener('click', () => handleModeButtonClick(rotateButton, InteractionMode.ROTATE));
+    dragButton.addEventListener('click', () => handleModeButtonClick(dragButton, InteractionMode.DRAG));
+    scaleButton.addEventListener('click', () => handleModeButtonClick(scaleButton, InteractionMode.SCALE));
+};
 
-            const createButton = (text, mode) => {
-                const button = document.createElement('button');
-                button.textContent = text;
-                button.style.padding = '10px 20px';
-                button.style.backgroundColor = '#ffffff';
-                button.style.border = 'none';
-                button.style.borderRadius = '5px';
-                button.style.cursor = 'pointer';
-                
-                button.addEventListener('click', () => {
-                    currentMode = currentMode === mode ? InteractionMode.NONE : mode;
-                    document.querySelectorAll('.mode-button').forEach(btn => {
-                        btn.style.backgroundColor = '#ffffff';
-                    });
-                    if (currentMode === mode) {
-                        button.style.backgroundColor = '#a0a0a0';
-                    }
-                });
-                
-                button.classList.add('mode-button');
-                return button;
-            };
-
-            const rotateButton = createButton('Rotate', InteractionMode.ROTATE);
-            const dragButton = createButton('Drag', InteractionMode.DRAG);
-            const scaleButton = createButton('Scale', InteractionMode.SCALE);
-
-            buttonContainer.appendChild(rotateButton);
-            buttonContainer.appendChild(dragButton);
-            buttonContainer.appendChild(scaleButton);
-
-            document.body.appendChild(buttonContainer);
-        };
-
-        createModeButtons();
-
-      const setupSubmenus = () => {
+// Submenu functionality
+const setupSubmenus = () => {
     const menuItems = document.querySelectorAll('.menu-item');
     const submenus = document.querySelectorAll('.submenu');
     let activeSubmenu = null;
@@ -170,6 +154,44 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    // Close submenu when clicking outside
+    document.addEventListener('click', (e) => {
+        const submenuItem = e.target.closest('.submenu-item');
+        if (submenuItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Handle submenu item click
+            const category = submenuItem.getAttribute('data-category');
+            const itemName = submenuItem.getAttribute('data-item');
+            const modelId = `${category}-${itemName}`;
+            
+            const model = loadedModels.get(modelId);
+            if (model) {
+                const modelClone = deepClone(model);
+                showModel(modelClone);
+            }
+            
+            // Don't close the submenu when clicking items
+            return;
+        }
+        
+        // Close submenu if clicking outside both menu items and submenus
+        if (!e.target.closest('.menu-item') && !e.target.closest('.submenu')) {
+            if (activeSubmenu) {
+                activeSubmenu.style.display = 'none';
+                activeSubmenu = null;
+            }
+        }
+    });
+};
+
+// Initialize everything
+document.addEventListener("DOMContentLoaded", () => {
+    initializeModeButtons();
+    setupSubmenus();
+});
 
     // Event delegation for submenu items
     document.addEventListener('click', (e) => {
