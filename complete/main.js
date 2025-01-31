@@ -426,8 +426,8 @@ class ARFurnitureApp {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjection();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    };
+        };
+    
 
     initialize().catch(console.error);
 });
