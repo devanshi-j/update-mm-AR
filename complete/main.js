@@ -69,16 +69,16 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.add(directionalLight);
 
         // Initialize AR first
-        const arButton = ARButton.createButton(renderer, {
-            requiredFeatures: ["hit-test"],
-            optionalFeatures: ["dom-overlay"],
-            domOverlay: { root: document.body },
-            sessionInit: {
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.body }
-            }
-        });
-        document.body.appendChild(arButton);
+       // AR Button Initialization
+const arButton = ARButton.createButton(renderer, {
+    requiredFeatures: ["hit-test"],
+    optionalFeatures: ["dom-overlay"],
+    domOverlay: { root: document.body },
+});
+
+document.body.appendChild(arButton);
+
+
 
         // Raycaster setup
         const raycaster = new THREE.Raycaster();
@@ -375,6 +375,17 @@ const onTouchEnd = (event) => {
                     }
                 }
             }
+
+            renderer.xr.addEventListener("sessionstart", () => {
+    console.log("AR Session Started");
+    hitTestSourceRequested = false;
+});
+
+renderer.xr.addEventListener("sessionend", () => {
+    console.log("AR Session Ended");
+    hitTestSourceRequested = false;
+});
+
 
             renderer.render(scene, camera);
         });
