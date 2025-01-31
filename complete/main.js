@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.add(light);
         scene.add(directionalLight);
 
-        const arButton = ARButton.createButton(renderer, {
+         const arButton = ARButton.createButton(renderer, {
             requiredFeatures: ["hit-test"],
             optionalFeatures: ["dom-overlay"],
             domOverlay: { root: document.body },
@@ -78,6 +78,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         document.body.appendChild(arButton);
+
+
+// Handle XR session start
+renderer.xr.addEventListener("sessionstart", () => {
+    console.log("AR session started");
+});
+
+renderer.xr.addEventListener("sessionend", () => {
+    console.log("AR session ended");
+});
+
+document.body.appendChild(arButton);
+
+
 
         // Raycaster setup
         const raycaster = new THREE.Raycaster();
@@ -90,7 +104,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let previousTouchY = 0;
         let previousPinchDistance = 0;
 
-        // Reticle setup
+        // Controller setup for AR
+        const controller = renderer.xr.getController(0);
+        scene.add(controller);
+
+        // Create reticle
         const reticle = new THREE.Mesh(
             new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
             new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -106,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSource = null;
         let hitTestSourceRequested = false;
 
-        // Touch interaction calculations
+        // Calculate distance between two touch points
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
@@ -114,97 +132,104 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const onTouchStart = (event) => {
-            event.preventDefault();
+    event.preventDefault();
 
-            if (event.touches.length === 1) {
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+    if (event.touches.length === 1) {
+        // Single touch for rotation
+        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
 
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
+        raycaster.setFromCamera(touches, camera);
+        const intersects = raycaster.intersectObjects(placedItems, true);
 
-                if (intersects.length > 0) {
-                    selectedObject = intersects[0].object.parent;
-                    isRotating = true;
-                    previousTouchX = event.touches[0].pageX;
-                    isScaling = false;
-                    isDragging = false;
-                }
-            } else if (event.touches.length === 2) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        if (intersects.length > 0) {
+            selectedObject = intersects[0].object.parent;
+            isRotating = true;
+            previousTouchX = event.touches[0].pageX;
+            isScaling = false;  // Disable scaling during rotation
+            isDragging = false; // Disable dragging during rotation
+        }
+    } else if (event.touches.length === 2) {
+        // Two fingers: check pinch for scaling or dragging
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
 
-                if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-                    touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
-                    touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
+        if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
+            // If the pinch distance is small, treat it as dragging
+            touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
+            touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
 
-                    raycaster.setFromCamera(touches, camera);
-                    const intersects = raycaster.intersectObjects(placedItems, true);
+            raycaster.setFromCamera(touches, camera);
+            const intersects = raycaster.intersectObjects(placedItems, true);
 
-                    if (intersects.length > 0) {
-                        selectedObject = intersects[0].object.parent;
-                        previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                        previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                        isDragging = true;
-                        isRotating = false;
-                        isScaling = false;
-                    }
-                } else {
-                    previousPinchDistance = currentPinchDistance;
-                    isScaling = true;
-                    isRotating = false;
-                    isDragging = false;
-                }
+            if (intersects.length > 0) {
+                selectedObject = intersects[0].object.parent;
+                previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+                isDragging = true;
+                isRotating = false; // Disable rotation during dragging
+                isScaling = false;  // Disable scaling during dragging
             }
-        };
+        } else {
+            // If the pinch distance is large, treat it as scaling
+            previousPinchDistance = currentPinchDistance;
+            isScaling = true;
+            isRotating = false; // Disable rotation during scaling
+            isDragging = false; // Disable dragging during scaling
+        }
+    }
+};
 
-        const onTouchMove = (event) => {
-            event.preventDefault();
+const onTouchMove = (event) => {
+    event.preventDefault();
 
-            if (isRotating && event.touches.length === 1) {
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotation.y += deltaX * 0.01;
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 2) {
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+    if (isRotating && event.touches.length === 1) {
+        // Handle rotation with one finger
+        const deltaX = event.touches[0].pageX - previousTouchX;
+        selectedObject.rotation.y += deltaX * 0.01;
+        previousTouchX = event.touches[0].pageX;
+    } else if (isDragging && event.touches.length === 2) {
+        // Handle dragging with two fingers
+        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
 
-                const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
+        const deltaX = (currentCenterX - previousTouchX) * 0.01;
+        const deltaY = (currentCenterY - previousTouchY) * 0.01;
+        selectedObject.position.x += deltaX;
+        selectedObject.position.z += deltaY;
 
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
-            } else if (isScaling && event.touches.length === 2) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const scaleFactor = currentPinchDistance / previousPinchDistance;
+        previousTouchX = currentCenterX;
+        previousTouchY = currentCenterY;
+    } else if (isScaling && event.touches.length === 2) {
+        // Handle scaling with two fingers (pinch)
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        const scaleFactor = currentPinchDistance / previousPinchDistance;
 
-                if (scaleFactor !== 1) {
-                    const newScale = selectedObject.scale.x * scaleFactor;
-                    if (newScale >= 0.5 && newScale <= 2) {
-                        selectedObject.scale.multiplyScalar(scaleFactor);
-                    }
-                }
-
-                previousPinchDistance = currentPinchDistance;
+        if (scaleFactor !== 1) {
+            const newScale = selectedObject.scale.x * scaleFactor;
+            if (newScale >= 0.5 && newScale <= 2) {
+                selectedObject.scale.multiplyScalar(scaleFactor);
             }
-        };
+        }
 
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
-                isRotating = false;
-                isDragging = false;
-                isScaling = false;
-                selectedObject = null;
-            }
-        };
+        previousPinchDistance = currentPinchDistance;
+    }
+};
 
-        // Event Listeners
+const onTouchEnd = (event) => {
+    if (event.touches.length === 0) {
+        isRotating = false;
+        isDragging = false;
+        isScaling = false;
+        selectedObject = null;
+    }
+};
+
+        // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
         renderer.domElement.addEventListener('touchend', onTouchEnd, false);
 
-        // UI Elements
+        // UI Elements setup
         const menuButton = document.getElementById("menu-button");
         const closeButton = document.getElementById("close-button");
         const sidebarMenu = document.getElementById("sidebar-menu");
@@ -212,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
 
-        // Menu interactions
+        // Menu event handlers
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -239,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             menuButton.style.display = "block";
         });
 
-        // Category interactions
+        // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
@@ -267,34 +292,35 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const placeModel = () => {
-            if (previewItem && reticle.visible) {
-                const clone = deepClone(previewItem);
-                setOpacity(clone, 1.0);
-                
-                const position = new THREE.Vector3();
-                const rotation = new THREE.Quaternion();
-                const scale = new THREE.Vector3();
-                reticle.matrix.decompose(position, rotation, scale);
-                
-                clone.position.copy(position);
-                clone.quaternion.copy(rotation);
-                
-                scene.add(clone);
-                placedItems.push(clone);
+         if (previewItem && reticle.visible) {
+        const clone = deepClone(previewItem);
+        setOpacity(clone, 1.0);
+        
+        // Use the reticle's matrix to precisely set position, rotation, and scale
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+        
+        clone.position.copy(position);
+        clone.quaternion.copy(rotation);
+        clone.scale.copy(scale);  // Ensure the scale is also copied
+        
+        scene.add(clone);
+        placedItems.push(clone);
 
-                // Reset preview state
-                scene.remove(previewItem);
-                previewItem = null;
-                confirmButtons.style.display = "none";
+        placeModel();
+        // Clear the preview and hide confirmation buttons
+        cancelModel();
             }
         };
 
         const cancelModel = () => {
+            confirmButtons.style.display = "none";
             if (previewItem) {
                 scene.remove(previewItem);
                 previewItem = null;
             }
-            confirmButtons.style.display = "none";
         };
 
         // Load models
@@ -348,25 +374,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (hitTestSource) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
-                    if (hitTestResults.length > 0) {
-                        const hit = hitTestResults[0];
-                        reticle.visible = true;
-                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+    if (hitTestResults.length > 0) {
+        const hit = hitTestResults[0];
+        reticle.visible = true;
+        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+        
+        // Debug logging
+        console.log('Reticle position:', reticle.position);
+        console.log('Reticle visible:', reticle.visible);
 
-                        if (previewItem) {
-                            const position = new THREE.Vector3();
-                            const rotation = new THREE.Quaternion();
-                            const scale = new THREE.Vector3();
-                            reticle.matrix.decompose(position, rotation, scale);
-                            
-                            previewItem.position.copy(position);
-                            previewItem.quaternion.copy(rotation);
+        if (previewItem) {
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            reticle.matrix.decompose(position, rotation, scale);
+            
+            previewItem.position.copy(position);
+            previewItem.quaternion.copy(rotation);
                         }
                     } else {
                         reticle.visible = false;
                     }
                 }
             }
+
+           
+
 
             renderer.render(scene, camera);
         });
