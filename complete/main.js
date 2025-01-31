@@ -419,7 +419,7 @@ class ARFurnitureApp {
             }
 
             renderer.render(scene, camera);
-        });
+        };
 
         // Handle window resize
         window.addEventListener('resize', () => {
