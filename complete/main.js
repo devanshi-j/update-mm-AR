@@ -68,16 +68,17 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.add(light);
         scene.add(directionalLight);
 
-        // Initialize AR first
-       // AR Button Initialization
-// Initialize AR Button and WebXR session
-document.body.appendChild(
-    ARButton.createButton(renderer, {
-        requiredFeatures: ["hit-test"],
-        optionalFeatures: ["dom-overlay"],
-        domOverlay: { root: document.body },
-    })
-);
+         const arButton = ARButton.createButton(renderer, {
+            requiredFeatures: ["hit-test"],
+            optionalFeatures: ["dom-overlay"],
+            domOverlay: { root: document.body },
+            sessionInit: {
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.body }
+            }
+        });
+        document.body.appendChild(arButton);
+
 
 // Handle XR session start
 renderer.xr.addEventListener("sessionstart", () => {
