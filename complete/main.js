@@ -309,7 +309,7 @@ const onTouchEnd = (event) => {
         scene.add(clone);
         placedItems.push(clone);
 
-        placeModel();
+       
         // Clear the preview and hide confirmation buttons
         cancelModel();
             }
@@ -397,9 +397,6 @@ const onTouchEnd = (event) => {
                     }
                 }
             }
-
-           
-
 
             renderer.render(scene, camera);
         });
