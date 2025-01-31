@@ -2,6 +2,7 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
+// Utility functions remain the same
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
@@ -32,25 +33,26 @@ const deepClone = (obj) => {
 };
 
 const itemCategories = {
+    lamp: [
+        { name: "lamp1", height: 0.3 },
+        { name: "lamp2", height: 0.35 },
+        { name: "lamp3", height: 0.28 }
+    ],
+    sofa: [
+        { name: "sofa1", height: 0.1 },
+        { name: "sofa2", height: 0.12 },
+        { name: "sofa3", height: 0.15 }
+    ],
     table: [
-        { name: "table1", height: 0.3 },
-        { name: "table2", height: 0.35 },
-        { name: "table3", height: 0.28 }
-    ],
-    chair: [
-        { name: "chair1", height: 0.1 },
-        { name: "chair2", height: 0.12 },
-        { name: "chair3", height: 0.15 }
-    ],
-    shelf: [
-        { name: "shelf1", height: 0.2 },
-        { name: "shelf2", height: 0.25 },
-        { name: "shelf3", height: 0.22 }
+        { name: "table1", height: 0.2 },
+        { name: "table2", height: 0.25 },
+        { name: "table3", height: 0.22 }
     ]
 };
 
 document.addEventListener("DOMContentLoaded", () => {
     const initialize = async () => {
+        // Scene and AR setup remains the same
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -60,26 +62,95 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.body.appendChild(renderer.domElement);
 
+        // Add lights
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         scene.add(light);
         scene.add(directionalLight);
 
+        // Initialize AR
+        const arButton = ARButton.createButton(renderer, {
+            requiredFeatures: ["hit-test"],
+            optionalFeatures: ["dom-overlay"],
+            domOverlay: { root: document.body },
+            sessionInit: {
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.body }
+            }
+        });
+        document.body.appendChild(arButton);
+
+        // Interaction mode management
+        const InteractionMode = {
+            NONE: 'none',
+            ROTATE: 'rotate',
+            DRAG: 'drag',
+            SCALE: 'scale'
+        };
+        
+        let currentMode = InteractionMode.NONE;
+
+        // Create mode selection buttons
+        const createModeButtons = () => {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.position = 'fixed';
+            buttonContainer.style.bottom = '20px';
+            buttonContainer.style.left = '50%';
+            buttonContainer.style.transform = 'translateX(-50%)';
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.gap = '10px';
+            buttonContainer.style.zIndex = '1000';
+
+            const createButton = (text, mode) => {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.style.padding = '10px 20px';
+                button.style.backgroundColor = '#ffffff';
+                button.style.border = 'none';
+                button.style.borderRadius = '5px';
+                button.style.cursor = 'pointer';
+                
+                button.addEventListener('click', () => {
+                    currentMode = currentMode === mode ? InteractionMode.NONE : mode;
+                    // Update button styles
+                    document.querySelectorAll('.mode-button').forEach(btn => {
+                        btn.style.backgroundColor = '#ffffff';
+                    });
+                    if (currentMode === mode) {
+                        button.style.backgroundColor = '#a0a0a0';
+                    }
+                });
+                
+                button.classList.add('mode-button');
+                return button;
+            };
+
+            const rotateButton = createButton('Rotate', InteractionMode.ROTATE);
+            const dragButton = createButton('Drag', InteractionMode.DRAG);
+            const scaleButton = createButton('Scale', InteractionMode.SCALE);
+
+            buttonContainer.appendChild(rotateButton);
+            buttonContainer.appendChild(dragButton);
+            buttonContainer.appendChild(scaleButton);
+
+            document.body.appendChild(buttonContainer);
+        };
+
+        createModeButtons();
+
+        // Raycaster and touch setup
         const raycaster = new THREE.Raycaster();
         const touches = new THREE.Vector2();
         let selectedObject = null;
-        let interactionMode = null;
-        let isDragging = false;
-        let isRotating = false;
-        let isScaling = false;
-        let initialPinchDistance = 0;
-        let initialScale = 1;
         let previousTouchX = 0;
         let previousTouchY = 0;
+        let previousPinchDistance = 0;
 
+        // Controller setup for AR
         const controller = renderer.xr.getController(0);
         scene.add(controller);
 
+        // Create reticle
         const reticle = new THREE.Mesh(
             new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
             new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -88,6 +159,99 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
 
+        // Model Management
+        const loadedModels = new Map();
+        const placedItems = [];
+        let previewItem = null;
+        let hitTestSource = null;
+        let hitTestSourceRequested = false;
+
+        // Calculate distance between two touch points
+        const getTouchDistance = (touch1, touch2) => {
+            const dx = touch1.pageX - touch2.pageX;
+            const dy = touch1.pageY - touch2.pageY;
+            return Math.sqrt(dx * dx + dy * dy);
+        };
+
+        // Touch event handlers
+        const onTouchStart = (event) => {
+            event.preventDefault();
+            
+            touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+            touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(touches, camera);
+            const intersects = raycaster.intersectObjects(placedItems, true);
+            
+            if (intersects.length > 0) {
+                selectedObject = intersects[0].object.parent;
+                previousTouchX = event.touches[0].pageX;
+                previousTouchY = event.touches[0].pageY;
+                
+                if (event.touches.length === 2) {
+                    previousPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+                }
+            }
+        };
+
+        const onTouchMove = (event) => {
+            event.preventDefault();
+            
+            if (!selectedObject) return;
+
+            switch (currentMode) {
+                case InteractionMode.ROTATE:
+                    if (event.touches.length === 1) {
+                        const deltaX = event.touches[0].pageX - previousTouchX;
+                        selectedObject.rotation.y += deltaX * 0.01;
+                        previousTouchX = event.touches[0].pageX;
+                    }
+                    break;
+
+                case InteractionMode.DRAG:
+                    if (event.touches.length === 2) {
+                        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+                        
+                        const deltaX = (currentCenterX - previousTouchX) * 0.01;
+                        const deltaY = (currentCenterY - previousTouchY) * 0.01;
+                        
+                        selectedObject.position.x += deltaX;
+                        selectedObject.position.z += deltaY;
+                        
+                        previousTouchX = currentCenterX;
+                        previousTouchY = currentCenterY;
+                    }
+                    break;
+
+                case InteractionMode.SCALE:
+                    if (event.touches.length === 2) {
+                        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+                        const scaleFactor = currentPinchDistance / previousPinchDistance;
+                        
+                        if (scaleFactor !== 1) {
+                            const newScale = selectedObject.scale.x * scaleFactor;
+                            if (newScale >= 0.5 && newScale <= 2) {
+                                selectedObject.scale.multiplyScalar(scaleFactor);
+                            }
+                        }
+                        
+                        previousPinchDistance = currentPinchDistance;
+                    }
+                    break;
+            }
+        };
+
+        const onTouchEnd = () => {
+            selectedObject = null;
+        };
+
+        // Add touch event listeners
+        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
+
+        // UI Elements setup
         const menuButton = document.getElementById("menu-button");
         const closeButton = document.getElementById("close-button");
         const sidebarMenu = document.getElementById("sidebar-menu");
@@ -95,115 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
 
-        const rotateButton = document.getElementById("rotate-mode");
-        const moveButton = document.getElementById("move-mode");
-        const scaleButton = document.getElementById("scale-mode");
-        const interactionButtons = [moveButton, rotateButton, scaleButton];
-
-        const loadedModels = new Map();
-        const placedItems = [];
-        let previewItem = null;
-        let hitTestSource = null;
-        let hitTestSourceRequested = false;
-
-        const resetInteractionButtons = () => {
-            interactionButtons.forEach(button => {
-                button.classList.remove('active');
-            });
-            interactionMode = null;
-            selectedObject = null;
-            isDragging = false;
-            isRotating = false;
-            isScaling = false;
-        };
-
-        rotateButton.addEventListener('click', () => {
-            resetInteractionButtons();
-            rotateButton.classList.add('active');
-            interactionMode = 'rotate';
-        });
-
-        moveButton.addEventListener('click', () => {
-            resetInteractionButtons();
-            moveButton.classList.add('active');
-            interactionMode = 'drag';
-        });
-
-        scaleButton.addEventListener('click', () => {
-            resetInteractionButtons();
-            scaleButton.classList.add('active');
-            interactionMode = 'scale';
-        });
-
-        const onTouchStart = (event) => {
-            event.preventDefault();
-            
-            if (event.touches.length === 1 && selectedObject) {
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
-                
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
-                
-                if (intersects.length > 0) {
-                    switch (interactionMode) {
-                        case 'rotate':
-                            isRotating = true;
-                            previousTouchX = event.touches[0].pageX;
-                            break;
-                        case 'drag':
-                            isDragging = true;
-                            previousTouchX = event.touches[0].pageX;
-                            previousTouchY = event.touches[0].pageY;
-                            break;
-                    }
-                }
-            } else if (event.touches.length === 2 && selectedObject && interactionMode === 'scale') {
-                const dx = event.touches[0].pageX - event.touches[1].pageX;
-                const dy = event.touches[0].pageY - event.touches[1].pageY;
-                initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
-                isScaling = true;
-                initialScale = selectedObject.scale.x;
-            }
-        };
-
-        const onTouchMove = (event) => {
-            event.preventDefault();
-            
-            if (isRotating && event.touches.length === 1) {
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotation.y += deltaX * 0.01;
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 1) {
-                const deltaX = (event.touches[0].pageX - previousTouchX) * 0.01;
-                const deltaY = (event.touches[0].pageY - previousTouchY) * 0.01;
-                
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
-                
-                previousTouchX = event.touches[0].pageX;
-                previousTouchY = event.touches[0].pageY;
-            } else if (isScaling && event.touches.length === 2) {
-                const dx = event.touches[0].pageX - event.touches[1].pageX;
-                const dy = event.touches[0].pageY - event.touches[1].pageY;
-                const pinchDistance = Math.sqrt(dx * dx + dy * dy);
-                const scale = (pinchDistance / initialPinchDistance) * initialScale;
-                selectedObject.scale.set(scale, scale, scale);
-            }
-        };
-
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
-                isRotating = false;
-                isDragging = false;
-                isScaling = false;
-            }
-        };
-
-        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
-        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
-        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
-
+        // Menu event handlers
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -213,20 +269,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
-            }
-
-            // Select object for interaction
-            if (placedItems.length > 0) {
-                touches.x = (event.pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.pageY / window.innerHeight) * 2 + 1;
-                
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
-                
-                if (intersects.length > 0) {
-                    selectedObject = intersects[0].object.parent;
-                    resetInteractionButtons();
-                }
             }
         });
 
@@ -244,31 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
             menuButton.style.display = "block";
         });
 
-        const icons = document.querySelectorAll(".icon");
-        icons.forEach((icon) => {
-            icon.addEventListener("click", (event) => {
-                event.stopPropagation();
-                const clickedSubmenu = icon.querySelector(".submenu");
-                
-                // Prevent submenu from closing when clicking on inner item
-                if (event.target.closest('.submenu-item')) {
-                    return;
-                }
-                
-                // Toggle clicked submenu, close others
-                document.querySelectorAll('.submenu').forEach(submenu => {
-                    if (submenu !== clickedSubmenu) {
-                        submenu.classList.remove('open');
-                    }
-                });
-                
-                // If not clicking a submenu item, toggle the submenu
-                if (!event.target.closest('.submenu-item')) {
-                    clickedSubmenu.classList.toggle("open");
-                }
-            });
-        });
-
+        // Model management functions
         const showModel = (item) => {
             if (previewItem) {
                 scene.remove(previewItem);
@@ -306,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
+        // Load models
         for (const category in itemCategories) {
             for (const itemInfo of itemCategories[category]) {
                 try {
@@ -335,20 +354,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // Button Event Listeners
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
 
-        const arButton = ARButton.createButton(renderer, {
-            requiredFeatures: ["hit-test"],
-            optionalFeatures: ["dom-overlay"],
-            domOverlay: { root: document.body },
-            sessionInit: {
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.body }
-            }
-        });
-        document.body.appendChild(arButton);
-
+        // AR Session and Render Loop
         renderer.setAnimationLoop((timestamp, frame) => {
             if (frame) {
                 const referenceSpace = renderer.xr.getReferenceSpace();
@@ -388,9 +398,10 @@ document.addEventListener("DOMContentLoaded", () => {
             renderer.render(scene, camera);
         });
 
+        // Handle window resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+            camera.updateProjection();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     };
