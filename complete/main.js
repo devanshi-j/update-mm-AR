@@ -247,6 +247,8 @@ const onTouchEnd = (event) => {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
+
+                reticle.visible = false; 
             }
         });
 
@@ -289,6 +291,7 @@ const onTouchEnd = (event) => {
             scene.add(previewItem);
             setOpacity(previewItem, 0.5);
             confirmButtons.style.display = "flex";
+            reticle.visible = true; 
         };
 
         const placeModel = () => {
@@ -321,6 +324,7 @@ const onTouchEnd = (event) => {
                 scene.remove(previewItem);
                 previewItem = null;
             }
+            reticle.visible = false;  
         };
 
         // Load models
