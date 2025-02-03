@@ -123,6 +123,7 @@ document.body.appendChild(arButton);
         let previewItem = null;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
+        let isModelSelected = false;
 
         // Calculate distance between two touch points
         const getTouchDistance = (touch1, touch2) => {
@@ -259,13 +260,16 @@ const onTouchEnd = (event) => {
             closeButton.style.display = "block";
         });
 
-        closeButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sidebarMenu.classList.remove("open");
-            closeButton.style.display = "none";
-            menuButton.style.display = "block";
-        });
-
+       closeButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    sidebarMenu.classList.remove("open");
+    closeButton.style.display = "none";
+    menuButton.style.display = "block";
+    // Hide reticle when menu is closed
+    if (!isModelSelected) {
+        reticle.visible = false;
+    }
+});
         // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
@@ -283,23 +287,22 @@ const onTouchEnd = (event) => {
             });
         });
 
-        const showModel = (item) => {
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
-            previewItem = item;
-            scene.add(previewItem);
-            setOpacity(previewItem, 0.5);
-            confirmButtons.style.display = "flex";
-            reticle.visible = true; 
-        };
-
+       const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+    previewItem = item;
+    scene.add(previewItem);
+    setOpacity(previewItem, 0.5);
+    confirmButtons.style.display = "flex";
+    // Set model selected state to true
+    isModelSelected = true;
+};
         const placeModel = () => {
-         if (previewItem && reticle.visible) {
+    if (previewItem && reticle.visible) {
         const clone = deepClone(previewItem);
         setOpacity(clone, 1.0);
         
-        // Use the reticle's matrix to precisely set position, rotation, and scale
         const position = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
         const scale = new THREE.Vector3();
@@ -307,25 +310,31 @@ const onTouchEnd = (event) => {
         
         clone.position.copy(position);
         clone.quaternion.copy(rotation);
-        clone.scale.copy(scale);  // Ensure the scale is also copied
+        clone.scale.copy(scale);
         
         scene.add(clone);
         placedItems.push(clone);
-
-       
+        
+        // Reset model selected state and hide reticle
+        isModelSelected = false;
+        reticle.visible = false;
+        
         // Clear the preview and hide confirmation buttons
         cancelModel();
-            }
-        };
+    }
+};
 
-        const cancelModel = () => {
-            confirmButtons.style.display = "none";
-            if (previewItem) {
-                scene.remove(previewItem);
-                previewItem = null;
-            }
-            reticle.visible = false;  
-        };
+       const cancelModel = () => {
+    confirmButtons.style.display = "none";
+    if (previewItem) {
+        scene.remove(previewItem);
+        previewItem = null;
+    }
+    // Set model selected state to false
+    isModelSelected = false;
+    // Hide reticle
+    reticle.visible = false;
+};
 
         // Load models
         for (const category in itemCategories) {
@@ -362,45 +371,41 @@ const onTouchEnd = (event) => {
         cancelButton.addEventListener("click", cancelModel);
 
         // AR Session and Render Loop
-        renderer.setAnimationLoop((timestamp, frame) => {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
+       renderer.setAnimationLoop((timestamp, frame) => {
+    if (frame) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
 
-                if (!hitTestSourceRequested) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    hitTestSourceRequested = true;
+        if (!hitTestSourceRequested) {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                    hitTestSource = source;
+                });
+            });
+            hitTestSourceRequested = true;
+        }
+
+        if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
+                const hit = hitTestResults[0];
+                reticle.visible = true;
+                reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+                if (previewItem) {
+                    const position = new THREE.Vector3();
+                    const rotation = new THREE.Quaternion();
+                    const scale = new THREE.Vector3();
+                    reticle.matrix.decompose(position, rotation, scale);
+                    
+                    previewItem.position.copy(position);
+                    previewItem.quaternion.copy(rotation);
                 }
-
-                if (hitTestSource) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-    if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        reticle.visible = true;
-        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-        
-        // Debug logging
-        console.log('Reticle position:', reticle.position);
-        console.log('Reticle visible:', reticle.visible);
-
-        if (previewItem) {
-            const position = new THREE.Vector3();
-            const rotation = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-            reticle.matrix.decompose(position, rotation, scale);
-            
-            previewItem.position.copy(position);
-            previewItem.quaternion.copy(rotation);
-                        }
-                    } else {
-                        reticle.visible = false;
-                    }
-                }
+            } else {
+                reticle.visible = false;
             }
+        }
+    }
 
             renderer.render(scene, camera);
         });
