@@ -34,19 +34,19 @@ const deepClone = (obj) => {
 
 const itemCategories = {
     table: [
-        { name: "table1", height: 0.3 },
-        { name: "table2", height: 0.35 },
-        { name: "table3", height: 0.28 }
+        { name: "table1", height: 0.5 },
+        { name: "table2", height: 0.5 },
+        { name: "table3", height: 0.5 }
     ],
     chair: [
-        { name: "chair1", height: 0.1 },
-        { name: "chair2", height: 0.12 },
-        { name: "chair3", height: 0.15 }
+        { name: "chair1", height: 0.5 },
+        { name: "chair2", height: 0.5 },
+        { name: "chair3", height: 0.5 }
     ],
     shelf: [
-        { name: "shelf1", height: 0.2 },
-        { name: "shelf2", height: 0.25 },
-        { name: "shelf3", height: 0.22 }
+        { name: "shelf1", height: 0.5 },
+        { name: "shelf2", height: 0.5 },
+        { name: "shelf3", height: 0.5 }
     ]
 };
 
