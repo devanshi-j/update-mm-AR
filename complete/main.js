@@ -144,18 +144,22 @@ document.body.appendChild(arButton);
         const intersects = raycaster.intersectObjects(placedItems, true);
 
         if (intersects.length > 0) {
-            selectedObject = intersects[0].object.parent;
+            // Find the top-level parent object (the placed model)
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
+            }
+            selectedObject = parent;
             isRotating = true;
             previousTouchX = event.touches[0].pageX;
-            isScaling = false;  // Disable scaling during rotation
-            isDragging = false; // Disable dragging during rotation
+            isScaling = false;
+            isDragging = false;
         }
     } else if (event.touches.length === 2) {
-        // Two fingers: check pinch for scaling or dragging
+        // Two finger touch handling remains the same
         const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
 
         if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-            // If the pinch distance is small, treat it as dragging
             touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
             touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
 
@@ -163,19 +167,22 @@ document.body.appendChild(arButton);
             const intersects = raycaster.intersectObjects(placedItems, true);
 
             if (intersects.length > 0) {
-                selectedObject = intersects[0].object.parent;
+                let parent = intersects[0].object;
+                while (parent.parent && parent.parent !== scene) {
+                    parent = parent.parent;
+                }
+                selectedObject = parent;
                 previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
                 previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
                 isDragging = true;
-                isRotating = false; // Disable rotation during dragging
-                isScaling = false;  // Disable scaling during dragging
+                isRotating = false;
+                isScaling = false;
             }
         } else {
-            // If the pinch distance is large, treat it as scaling
             previousPinchDistance = currentPinchDistance;
             isScaling = true;
-            isRotating = false; // Disable rotation during scaling
-            isDragging = false; // Disable dragging during scaling
+            isRotating = false;
+            isDragging = false;
         }
     }
 };
@@ -183,25 +190,27 @@ document.body.appendChild(arButton);
 const onTouchMove = (event) => {
     event.preventDefault();
 
-    if (isRotating && event.touches.length === 1) {
-        // Handle rotation with one finger
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        // Calculate rotation based on touch movement
         const deltaX = event.touches[0].pageX - previousTouchX;
-        selectedObject.rotation.y += deltaX * 0.01;
+        
+        // Only rotate around Y axis with proper sensitivity
+        selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+        
         previousTouchX = event.touches[0].pageX;
-    } else if (isDragging && event.touches.length === 2) {
-        // Handle dragging with two fingers
+    } else if (isDragging && event.touches.length === 2 && selectedObject) {
         const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
         const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
 
         const deltaX = (currentCenterX - previousTouchX) * 0.01;
         const deltaY = (currentCenterY - previousTouchY) * 0.01;
+        
         selectedObject.position.x += deltaX;
         selectedObject.position.z += deltaY;
 
         previousTouchX = currentCenterX;
         previousTouchY = currentCenterY;
-    } else if (isScaling && event.touches.length === 2) {
-        // Handle scaling with two fingers (pinch)
+    } else if (isScaling && event.touches.length === 2 && selectedObject) {
         const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
         const scaleFactor = currentPinchDistance / previousPinchDistance;
 
@@ -224,7 +233,6 @@ const onTouchEnd = (event) => {
         selectedObject = null;
     }
 };
-
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
