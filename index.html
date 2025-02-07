@@ -3,119 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animated Image Grid</title>
+    <title>Document</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #111;
-            margin: 0;
-        }
-
-        .container {
+        button {
+            padding: 3%;
+            margin: 18%;
+            margin-left: 38%;
             position: relative;
+            z-index: 1;
+            boder-radius: 50%;
         }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 10px;
-        }
-
-        .square {
-            width: 100px;
-            height: 100px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 10px;
-            transition: background-image 0.5s ease-in-out;
-        }
-
-        /* Camera Button */
-        #camera-btn {
-            position: absolute;
-            bottom: -80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        #camera-btn img {
-            width: 50px;
-            height: 50px;
-            transition: transform 0.2s;
-        }
-
-        #camera-btn:hover img {
-            transform: scale(1.1);
+        
+        .video-background {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: 0;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <!-- Grid of squares -->
-        <div class="grid">
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-            <div class="square"></div>
-        </div>
-
-        <!-- Camera Button -->
-        <button id="camera-btn">
-            <img src="../assets/images/img16.png" alt="Camera Logo">
-        </button>
-    </div>
-
-    <script>
-        // Array of images with correct folder path
-        const images = [
-            "../assets/images/img1.png",
-            "../assets/images/img2.png",
-            "../assets/images/img3.png",
-            "../assets/images/img4.png",
-            "../assets/images/img5.png",
-             "../assets/images/img6.png",
-            "../assets/images/img7.png",
-            "../assets/images/img8.png",
-            "../assets/images/img9.png",
-            "../assets/images/img10.png",
-             "../assets/images/img11.png",
-            "../assets/images/img12.png",
-            "../assets/images/img13.png",
-            "../assets/images/img14.png",
-            "../assets/images/img15.png"
-        ];
-        
-        const squares = document.querySelectorAll(".square");
-
-        // Function to change images randomly
-        function changeImages() {
-            squares.forEach(square => {
-                const randomImage = images[Math.floor(Math.random() * images.length)];
-                square.style.backgroundImage = `url(${randomImage})`;
-            });
-        }
-
-        // Change images every second
-        setInterval(changeImages, 1000);
-
-        // Camera button opens a new webpage
-        document.getElementById("camera-btn").addEventListener("click", () => {
-            window.location.href = "../complete/index.html"; // Change URL as needed
-        });
-    </script>
-
+    <video autoplay muted loop class="video-background">
+        <source src="./assets/indexpage.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <a href="./complete/index.html"><button>CLICK TO LOAD THE 3D MODEL!</button></a>
 </body>
 </html>
