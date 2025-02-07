@@ -5,15 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        button {
-            padding: 3%;
-            margin: 18%;
-            margin-left: 38%;
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-container {
             position: relative;
             z-index: 1;
-            boder-radius: 50%;
+            width: 80%;
+            max-width: 300px;
+            padding: 20px;
         }
-        
+
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 50%;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        img:hover {
+            transform: scale(1.05);
+        }
+
         .video-background {
             position: fixed;
             right: 0;
@@ -25,6 +47,21 @@
             z-index: 0;
             object-fit: cover;
         }
+
+        /* Media Queries */
+        @media screen and (max-width: 768px) {
+            .image-container {
+                width: 60%;
+                padding: 15px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .image-container {
+                width: 70%;
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -32,6 +69,10 @@
         <source src="./assets/indexpage.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
-    <a href="./complete/index.html"><button>CLICK TO LOAD THE 3D MODEL!</button></a>
+    <div class="image-container">
+        <a href="./complete/index.html">
+            <img src="./assets/images/img16.png" alt="Click to proceed">
+        </a>
+    </div>
 </body>
 </html>
