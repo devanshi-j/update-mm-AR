@@ -3,26 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Animated Image Grid</title>
     <style>
-        button{
-            padding: 3%;
-            margin: 18%;
-            margin-left: 38%;
-            
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            margin: 0;
         }
-        body{
-            background-image: url(https://www.google.com/url?sa=i&url=https%3A%2F%2Fletsenhance.io%2F&psig=AOvVaw0IJDM32oOkNqSmwuZpeX9x&ust=1715855525268000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCOiRmI26j4YDFQAAAAAdAAAAABAD);
-             background-repeat: no-repeat;
-            background-size: 50%, 100%;
+
+        .container {
+            position: relative;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+        }
+
+        .square {
+            width: 100px;
+            height: 100px;
+            background-size: cover;
             background-position: center;
-            background-color: rgb(3, 7, 65);
-        
+            border-radius: 10px;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        /* Camera Button */
+        #camera-btn {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        #camera-btn img {
+            width: 50px;
+            height: 50px;
+            transition: transform 0.2s;
+        }
+
+        #camera-btn:hover img {
+            transform: scale(1.1);
         }
     </style>
 </head>
-
 <body>
-    <a href="./complete/index.html"><button>CLICK TO LOAD THE 3D MODEL!</button></a>
+
+    <div class="container">
+        <!-- Grid of squares -->
+        <div class="grid">
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+        </div>
+
+        <!-- Camera Button -->
+        <button id="camera-btn">
+            <img src="assets/icons/camera.png" alt="Camera Logo">
+        </button>
+    </div>
+
+    <script>
+        // Array of images with correct folder path
+        const images = [
+            "assets/images/img1.jpg",
+            "assets/images/img2.jpg",
+            "assets/images/img3.jpg",
+            "assets/images/img4.jpg",
+            "assets/images/img5.jpg"
+        ];
+        
+        const squares = document.querySelectorAll(".square");
+
+        // Function to change images randomly
+        function changeImages() {
+            squares.forEach(square => {
+                const randomImage = images[Math.floor(Math.random() * images.length)];
+                square.style.backgroundImage = `url(${randomImage})`;
+            });
+        }
+
+        // Change images every second
+        setInterval(changeImages, 1000);
+
+        // Camera button opens a new webpage
+        document.getElementById("camera-btn").addEventListener("click", () => {
+            window.location.href = "newpage.html"; // Change URL as needed
+        });
+    </script>
+
 </body>
 </html>
