@@ -34,19 +34,19 @@ const deepClone = (obj) => {
 
 const itemCategories = {
     table: [
-        { name: "table1", height: 0.3 },
-        { name: "table2", height: 0.35 },
-        { name: "table3", height: 0.28 }
+        { name: "table1", height: 0.5 },
+        { name: "table2", height: 0.5 },
+        { name: "table3", height: 0.5 }
     ],
     chair: [
-        { name: "chair1", height: 0.1 },
-        { name: "chair2", height: 0.12 },
-        { name: "chair3", height: 0.15 }
+        { name: "chair1", height: 0.5 },
+        { name: "chair2", height: 0.5 },
+        { name: "chair3", height: 0.5 }
     ],
     shelf: [
-        { name: "shelf1", height: 0.2 },
-        { name: "shelf2", height: 0.25 },
-        { name: "shelf3", height: 0.22 }
+        { name: "shelf1", height: 0.5 },
+        { name: "shelf2", height: 0.5 },
+        { name: "shelf3", height: 0.5 }
     ]
 };
 
@@ -123,6 +123,7 @@ document.body.appendChild(arButton);
         let previewItem = null;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
+        let isModelSelected = false;
 
         // Calculate distance between two touch points
         const getTouchDistance = (touch1, touch2) => {
@@ -143,18 +144,22 @@ document.body.appendChild(arButton);
         const intersects = raycaster.intersectObjects(placedItems, true);
 
         if (intersects.length > 0) {
-            selectedObject = intersects[0].object.parent;
+            // Find the top-level parent object (the placed model)
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
+            }
+            selectedObject = parent;
             isRotating = true;
             previousTouchX = event.touches[0].pageX;
-            isScaling = false;  // Disable scaling during rotation
-            isDragging = false; // Disable dragging during rotation
+            isScaling = false;
+            isDragging = false;
         }
     } else if (event.touches.length === 2) {
-        // Two fingers: check pinch for scaling or dragging
+        // Two finger touch handling remains the same
         const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
 
         if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-            // If the pinch distance is small, treat it as dragging
             touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
             touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
 
@@ -162,19 +167,22 @@ document.body.appendChild(arButton);
             const intersects = raycaster.intersectObjects(placedItems, true);
 
             if (intersects.length > 0) {
-                selectedObject = intersects[0].object.parent;
+                let parent = intersects[0].object;
+                while (parent.parent && parent.parent !== scene) {
+                    parent = parent.parent;
+                }
+                selectedObject = parent;
                 previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
                 previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
                 isDragging = true;
-                isRotating = false; // Disable rotation during dragging
-                isScaling = false;  // Disable scaling during dragging
+                isRotating = false;
+                isScaling = false;
             }
         } else {
-            // If the pinch distance is large, treat it as scaling
             previousPinchDistance = currentPinchDistance;
             isScaling = true;
-            isRotating = false; // Disable rotation during scaling
-            isDragging = false; // Disable dragging during scaling
+            isRotating = false;
+            isDragging = false;
         }
     }
 };
@@ -182,25 +190,27 @@ document.body.appendChild(arButton);
 const onTouchMove = (event) => {
     event.preventDefault();
 
-    if (isRotating && event.touches.length === 1) {
-        // Handle rotation with one finger
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        // Calculate rotation based on touch movement
         const deltaX = event.touches[0].pageX - previousTouchX;
-        selectedObject.rotation.y += deltaX * 0.01;
+        
+        // Only rotate around Y axis with proper sensitivity
+        selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+        
         previousTouchX = event.touches[0].pageX;
-    } else if (isDragging && event.touches.length === 2) {
-        // Handle dragging with two fingers
+    } else if (isDragging && event.touches.length === 2 && selectedObject) {
         const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
         const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
 
         const deltaX = (currentCenterX - previousTouchX) * 0.01;
         const deltaY = (currentCenterY - previousTouchY) * 0.01;
+        
         selectedObject.position.x += deltaX;
         selectedObject.position.z += deltaY;
 
         previousTouchX = currentCenterX;
         previousTouchY = currentCenterY;
-    } else if (isScaling && event.touches.length === 2) {
-        // Handle scaling with two fingers (pinch)
+    } else if (isScaling && event.touches.length === 2 && selectedObject) {
         const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
         const scaleFactor = currentPinchDistance / previousPinchDistance;
 
@@ -223,7 +233,6 @@ const onTouchEnd = (event) => {
         selectedObject = null;
     }
 };
-
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -247,6 +256,8 @@ const onTouchEnd = (event) => {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
+
+                reticle.visible = false; 
             }
         });
 
@@ -257,13 +268,16 @@ const onTouchEnd = (event) => {
             closeButton.style.display = "block";
         });
 
-        closeButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sidebarMenu.classList.remove("open");
-            closeButton.style.display = "none";
-            menuButton.style.display = "block";
-        });
-
+       closeButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    sidebarMenu.classList.remove("open");
+    closeButton.style.display = "none";
+    menuButton.style.display = "block";
+    // Hide reticle when menu is closed
+    if (!isModelSelected) {
+        reticle.visible = false;
+    }
+});
         // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
@@ -281,22 +295,22 @@ const onTouchEnd = (event) => {
             });
         });
 
-        const showModel = (item) => {
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
-            previewItem = item;
-            scene.add(previewItem);
-            setOpacity(previewItem, 0.5);
-            confirmButtons.style.display = "flex";
-        };
-
+       const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+    previewItem = item;
+    scene.add(previewItem);
+    setOpacity(previewItem, 0.5);
+    confirmButtons.style.display = "flex";
+    // Set model selected state to true
+    isModelSelected = true;
+};
         const placeModel = () => {
-         if (previewItem && reticle.visible) {
+    if (previewItem && reticle.visible) {
         const clone = deepClone(previewItem);
         setOpacity(clone, 1.0);
         
-        // Use the reticle's matrix to precisely set position, rotation, and scale
         const position = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
         const scale = new THREE.Vector3();
@@ -304,24 +318,31 @@ const onTouchEnd = (event) => {
         
         clone.position.copy(position);
         clone.quaternion.copy(rotation);
-        clone.scale.copy(scale);  // Ensure the scale is also copied
+        clone.scale.copy(scale);
         
         scene.add(clone);
         placedItems.push(clone);
-
-       
+        
+        // Reset model selected state and hide reticle
+        isModelSelected = false;
+        reticle.visible = false;
+        
         // Clear the preview and hide confirmation buttons
         cancelModel();
-            }
-        };
+    }
+};
 
-        const cancelModel = () => {
-            confirmButtons.style.display = "none";
-            if (previewItem) {
-                scene.remove(previewItem);
-                previewItem = null;
-            }
-        };
+       const cancelModel = () => {
+    confirmButtons.style.display = "none";
+    if (previewItem) {
+        scene.remove(previewItem);
+        previewItem = null;
+    }
+    // Set model selected state to false
+    isModelSelected = false;
+    // Hide reticle
+    reticle.visible = false;
+};
 
         // Load models
         for (const category in itemCategories) {
@@ -358,45 +379,41 @@ const onTouchEnd = (event) => {
         cancelButton.addEventListener("click", cancelModel);
 
         // AR Session and Render Loop
-        renderer.setAnimationLoop((timestamp, frame) => {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
+       renderer.setAnimationLoop((timestamp, frame) => {
+    if (frame) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
 
-                if (!hitTestSourceRequested) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    hitTestSourceRequested = true;
+        if (!hitTestSourceRequested) {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                    hitTestSource = source;
+                });
+            });
+            hitTestSourceRequested = true;
+        }
+
+        if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
+                const hit = hitTestResults[0];
+                reticle.visible = true;
+                reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+                if (previewItem) {
+                    const position = new THREE.Vector3();
+                    const rotation = new THREE.Quaternion();
+                    const scale = new THREE.Vector3();
+                    reticle.matrix.decompose(position, rotation, scale);
+                    
+                    previewItem.position.copy(position);
+                    previewItem.quaternion.copy(rotation);
                 }
-
-                if (hitTestSource) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-    if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        reticle.visible = true;
-        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-        
-        // Debug logging
-        console.log('Reticle position:', reticle.position);
-        console.log('Reticle visible:', reticle.visible);
-
-        if (previewItem) {
-            const position = new THREE.Vector3();
-            const rotation = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-            reticle.matrix.decompose(position, rotation, scale);
-            
-            previewItem.position.copy(position);
-            previewItem.quaternion.copy(rotation);
-                        }
-                    } else {
-                        reticle.visible = false;
-                    }
-                }
+            } else {
+                reticle.visible = false;
             }
+        }
+    }
 
             renderer.render(scene, camera);
         });
