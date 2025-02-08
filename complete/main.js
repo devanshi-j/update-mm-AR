@@ -16,10 +16,34 @@ const normalizeModel = (obj, height) => {
 const setOpacity = (obj, opacity) => {
     obj.traverse((child) => {
         if (child.isMesh) {
-            child.material.transparent = true;
-            child.material.opacity = opacity;
+            // Handle different material types
+            if (Array.isArray(child.material)) {
+                // Handle multi-material objects
+                child.material.forEach(material => {
+                    material.transparent = opacity < 1.0;
+                    material.opacity = opacity;
+                    material.needsUpdate = true;
+                });
+            } else {
+                // Handle single material objects
+                child.material.transparent = opacity < 1.0;
+                child.material.opacity = opacity;
+                child.material.needsUpdate = true;
+            }
+            
+            // Ensure proper material settings
+            if (opacity < 1.0) {
+                child.material.depthWrite = false;
+            } else {
+                child.material.depthWrite = true;
+            }
+            
+            // Force material update
+            child.material.alphaTest = 0.5;
+            child.material.side = THREE.DoubleSide;
         }
     });
+};
 };
 
 const deepClone = (obj) => {
