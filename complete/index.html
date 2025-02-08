@@ -130,34 +130,33 @@
             transform: scale(1.05);
         }
 
-        #confirm-buttons {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 300;
-            display: none;
-            gap: 20px;
-            justify-content: center;
-            padding: 15px 25px;
-            background-color: rgba(0, 0, 0, 0.8);
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
-        }
+       #place, #cancel {
+    font-size: 14px;          /* Reduced from 18px */
+    padding: 8px 16px;        /* Reduced from 12px 24px */
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;       /* Reduced from 8px */
+    transition: all 0.2s ease;
+    margin: 0 8px;            /* Reduced from 0 10px */
+    min-width: 80px;          /* Reduced from 120px */
+    font-weight: bold;
+    text-transform: uppercase;
+}
 
-        #place, #cancel {
-            font-size: 18px;
-            padding: 12px 24px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            margin: 0 10px;
-            min-width: 120px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
+#confirm-buttons {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: none;
+    gap: 12px;               /* Reduced from 20px */
+    justify-content: center;
+    padding: 10px 15px;      /* Reduced from 15px 25px */
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;      /* Reduced from 12px */
+    backdrop-filter: blur(8px);
+}
         #place {
             background-color: #28a745;
             color: white;
