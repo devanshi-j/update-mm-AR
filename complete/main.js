@@ -44,7 +44,7 @@ const setOpacity = (obj, opacity) => {
         }
     });
 };
-};
+
 
 const deepClone = (obj) => {
     const newObj = obj.clone();
