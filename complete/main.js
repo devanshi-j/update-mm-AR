@@ -290,17 +290,28 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        const showModel = (item) => {
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
-            previewItem = item;
-            scene.add(previewItem);
-            setOpacity(previewItem, 0.5);
-            confirmButtons.style.display = "flex";
-            // Set model selected state to true
-            isModelSelected = true;
-        };
+       const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+    
+    // Deep clone the item and set opacity
+    const modelClone = item.clone();
+    modelClone.traverse((child) => {
+        if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.opacity = 0.5; // Set the desired opacity
+        }
+    });
+
+    previewItem = modelClone;
+    scene.add(previewItem);
+    confirmButtons.style.display = "flex";
+    // Set model selected state to true
+    isModelSelected = true;
+};
+        
         const placeModel = () => {
             if (previewItem && reticle.visible) {
                 const clone = deepClone(previewItem);
