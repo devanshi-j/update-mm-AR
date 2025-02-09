@@ -234,67 +234,86 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const showModel = (model) => {
+            // Remove existing preview if any
             if (previewItem) {
                 scene.remove(previewItem);
             }
             
-            // Create a new preview item with semi-transparent materials
-            previewItem = model.clone();
-            previewItem.traverse((child) => {
+            // Create a new instance of the model
+            const newModel = new THREE.Group();
+            
+            // Clone the model and its materials
+            model.traverse((child) => {
                 if (child.isMesh) {
-                    child.material = child.material.clone();
-                    child.material.transparent = true;
-                    child.material.opacity = 0.5;
+                    const clonedMesh = child.clone();
+                    // Clone and modify material
+                    clonedMesh.material = child.material.clone();
+                    clonedMesh.material.transparent = true;
+                    clonedMesh.material.opacity = 0.5;
+                    newModel.add(clonedMesh);
                 }
             });
             
+            previewItem = newModel;
             scene.add(previewItem);
             confirmButtons.style.display = "flex";
             isModelSelected = true;
+            reticle.visible = true; // Make sure reticle is visible when showing model
         };
 
         const placeModel = () => {
             if (previewItem && reticle.visible) {
-                // Create final model with opaque materials
-                const finalModel = previewItem.clone();
-                finalModel.traverse((child) => {
+                // Create a new instance for the final placed model
+                const finalModel = new THREE.Group();
+                
+                // Clone the preview model with opaque materials
+                previewItem.traverse((child) => {
                     if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = false;
-                        child.material.opacity = 1.0;
+                        const placedMesh = child.clone();
+                        // Clone and modify material
+                        placedMesh.material = child.material.clone();
+                        placedMesh.material.transparent = false;
+                        placedMesh.material.opacity = 1.0;
+                        finalModel.add(placedMesh);
                     }
                 });
                 
+                // Get position from reticle
                 const position = new THREE.Vector3();
                 const rotation = new THREE.Quaternion();
                 const scale = new THREE.Vector3();
                 reticle.matrix.decompose(position, rotation, scale);
                 
+                // Apply transformation
                 finalModel.position.copy(position);
                 finalModel.quaternion.copy(rotation);
-                finalModel.scale.copy(scale);
                 
+                // Add to scene and tracking array
                 scene.add(finalModel);
                 placedItems.push(finalModel);
                 
+                // Reset state
                 isModelSelected = false;
                 reticle.visible = false;
                 
-                cancelModel();
+                // Clean up preview
+                scene.remove(previewItem);
+                previewItem = null;
+                confirmButtons.style.display = "none";
             }
         };
 
         const cancelModel = () => {
-            confirmButtons.style.display = "none";
             if (previewItem) {
                 scene.remove(previewItem);
                 previewItem = null;
             }
+            confirmButtons.style.display = "none";
             isModelSelected = false;
             reticle.visible = false;
         };
 
-        // Load models
+        // Modified model loading loop
         for (const category in itemCategories) {
             for (const itemInfo of itemCategories[category]) {
                 try {
@@ -313,7 +332,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             e.stopPropagation();
                             const model = loadedModels.get(`${category}-${itemInfo.name}`);
                             if (model) {
-                                showModel(model);
+                                const modelClone = model.clone(); // Clone before showing
+                                showModel(modelClone);
                             }
                         });
                     }
