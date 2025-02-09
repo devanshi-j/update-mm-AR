@@ -258,54 +258,77 @@ const onTouchEnd = (event) => {
             });
         });
 
-        const showModel = (item) => {
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
+       const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
 
-            // Deep clone the item and set opacity
-            const modelClone = item.clone();
-            modelClone.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = child.material.clone();
-                    child.material.transparent = true;
-                    child.material.opacity = 0.5; // Set the desired opacity
+    // Create a deep clone of the item
+    const modelClone = item.clone();
+    modelClone.traverse((child) => {
+        if (child.isMesh) {
+            // Clone the material
+            child.material = child.material.clone();
+            // Clone the texture map if it exists
+            if (child.material.map) {
+                child.material.map = child.material.map.clone();
+            }
+            // Set transparency and opacity
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+        }
+    });
+
+    previewItem = modelClone;
+    scene.add(previewItem);
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
+};
+
+// And update the thumbnail click event listener to use the original model directly:
+thumbnail.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const model = loadedModels.get(`${category}-${itemInfo.name}`);
+    if (model) {
+        showModel(model); // Pass the model directly, cloning happens inside showModel
+    }
+});
+
+// Update the placeModel function to also include deep cloning:
+const placeModel = () => {
+    if (previewItem && reticle.visible) {
+        // Create a deep clone of the preview item
+        const clone = previewItem.clone();
+        clone.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                if (child.material.map) {
+                    child.material.map = child.material.map.clone();
                 }
-            });
-
-            previewItem = modelClone;
-            scene.add(previewItem);
-            confirmButtons.style.display = "flex";
-            // Set model selected state to true
-            isModelSelected = true;
-        };
-
-        const placeModel = () => {
-            if (previewItem && reticle.visible) {
-                const clone = deepClone(previewItem);
-                setOpacity(clone, 1.0);
-
-                const position = new THREE.Vector3();
-                const rotation = new THREE.Quaternion();
-                const scale = new THREE.Vector3();
-                reticle.matrix.decompose(position, rotation, scale);
-
-                clone.position.copy(position);
-                clone.quaternion.copy(rotation);
-                clone.scale.copy(scale);
-
-                scene.add(clone);
-                placedItems.push(clone);
-
-                // Reset model selected state and hide reticle
-                isModelSelected = false;
-                reticle.visible = false;
-
-                // Clear the preview and hide confirmation buttons
-                cancelModel();
+                child.material.transparent = true;
+                child.material.opacity = 1.0; // Full opacity for placed model
             }
-        };
+        });
 
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+
+        clone.position.copy(position);
+        clone.quaternion.copy(rotation);
+        clone.scale.copy(scale);
+
+        scene.add(clone);
+        placedItems.push(clone);
+
+        isModelSelected = false;
+        reticle.visible = false;
+
+        cancelModel();
+    }
+};
         const cancelModel = () => {
             confirmButtons.style.display = "none";
             if (previewItem) {
