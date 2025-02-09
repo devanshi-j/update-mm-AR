@@ -118,107 +118,83 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const onTouchStart = (event) => {
-            event.preventDefault();
+    event.preventDefault();
 
-            if (event.touches.length === 1) {
-                // Single touch for rotation
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+    if (event.touches.length === 1) {
+        // Single touch for rotation
+        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
 
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
+        raycaster.setFromCamera(touches, camera);
+        const intersects = raycaster.intersectObjects(placedItems, true);
 
-                if (intersects.length > 0) {
-                    // Find the top-level parent object (the placed model)
-                    let parent = intersects[0].object;
-                    while (parent.parent && parent.parent !== scene) {
-                        parent = parent.parent;
-                    }
-                    selectedObject = parent;
-                    isRotating = true;
-                    previousTouchX = event.touches[0].pageX;
-                    // isScaling = false; // Commented out
-                    isDragging = false;
-                }
-            } else if (event.touches.length === 2) {
-                // Two finger touch handling remains the same
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-
-                if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-                    touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1);
-                    touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1);
-
-                    raycaster.setFromCamera(touches, camera);
-                    const intersects = raycaster.intersectObjects(placedItems, true);
-
-                    if (intersects.length > 0) {
-                        let parent = intersects[0].object;
-                        while (parent.parent && parent.parent !== scene) {
-                            parent = parent.parent;
-                        }
-                        selectedObject = parent;
-                        previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                        previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                        isDragging = true;
-                        isRotating = false;
-                        // isScaling = false; // Commented out
-                    }
-                } else {
-                    previousPinchDistance = currentPinchDistance;
-                    // isScaling = true; // Commented out
-                    isRotating = false;
-                    isDragging = false;
-                }
+        if (intersects.length > 0) {
+            // Find the top-level parent object (the placed model)
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
             }
-        };
+            selectedObject = parent;
+            isRotating = true;
+            previousTouchX = event.touches[0].pageX;
+            isDragging = false;
+        }
+    } else if (event.touches.length === 2) {
+        // Two finger touch for dragging
+        touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
+        touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
 
-        const onTouchMove = (event) => {
-            event.preventDefault();
+        raycaster.setFromCamera(touches, camera);
+        const intersects = raycaster.intersectObjects(placedItems, true);
 
-            if (isRotating && event.touches.length === 1 && selectedObject) {
-                // Calculate rotation based on touch movement
-                const deltaX = event.touches[0].pageX - previousTouchX;
-
-                // Only rotate around Y axis with proper sensitivity
-                selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
-
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 2 && selectedObject) {
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-
-                const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                const deltaY = (currentCenterY - previousTouchY) * 0.01;
-
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
-
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
-            } /* else if (isScaling && event.touches.length === 2 && selectedObject) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const scaleFactor = currentPinchDistance / previousPinchDistance;
-
-                if (scaleFactor !== 1) {
-                    const newScale = selectedObject.scale.x * scaleFactor;
-                    if (newScale >= 0.5 && newScale <= 2) {
-                        selectedObject.scale.multiplyScalar(scaleFactor);
-                    }
-                }
-
-                previousPinchDistance = currentPinchDistance;
-            } */
-        };
-
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
-                isRotating = false;
-                isDragging = false;
-                // isScaling = false; // Commented out
-                selectedObject = null;
+        if (intersects.length > 0) {
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
             }
-        };
+            selectedObject = parent;
+            previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+            previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+            isDragging = true;
+            isRotating = false;
+        }
+    }
+};
 
+const onTouchMove = (event) => {
+    event.preventDefault();
+
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        // Calculate rotation based on touch movement
+        const deltaX = event.touches[0].pageX - previousTouchX;
+
+        // Only rotate around Y axis with proper sensitivity
+        selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+
+        previousTouchX = event.touches[0].pageX;
+    } else if (isDragging && event.touches.length === 2 && selectedObject) {
+        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+
+        const deltaX = (currentCenterX - previousTouchX) * 0.01;
+        const deltaY = (currentCenterY - previousTouchY) * 0.01;
+
+        selectedObject.position.x += deltaX;
+        selectedObject.position.z += deltaY;
+
+        previousTouchX = currentCenterX;
+        previousTouchY = currentCenterY;
+    }
+};
+
+const onTouchEnd = (event) => {
+    if (event.touches.length === 0) {
+        isRotating = false;
+        isDragging = false;
+        selectedObject = null;
+    }
+};
+       
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
