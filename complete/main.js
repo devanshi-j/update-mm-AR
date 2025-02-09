@@ -16,31 +16,8 @@ const normalizeModel = (obj, height) => {
 const setOpacity = (obj, opacity) => {
     obj.traverse((child) => {
         if (child.isMesh) {
-            // Handle different material types
-            if (Array.isArray(child.material)) {
-                // Handle multi-material objects
-                child.material.forEach(material => {
-                    material.transparent = opacity < 1.0;
-                    material.opacity = opacity;
-                    material.needsUpdate = true;
-                });
-            } else {
-                // Handle single material objects
-                child.material.transparent = opacity < 1.0;
-                child.material.opacity = opacity;
-                child.material.needsUpdate = true;
-            }
-            
-            // Ensure proper material settings
-            if (opacity < 1.0) {
-                child.material.depthWrite = false;
-            } else {
-                child.material.depthWrite = true;
-            }
-            
-            // Force material update
-            child.material.alphaTest = 0.5;
-            child.material.side = THREE.DoubleSide;
+            child.material.transparent = true;
+            child.material.opacity = opacity;
         }
     });
 };
@@ -111,18 +88,16 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("AR session ended");
         });
 
-        document.body.appendChild(arButton);
-
         // Raycaster setup
         const raycaster = new THREE.Raycaster();
         const touches = new THREE.Vector2();
         let selectedObject = null;
         let isDragging = false;
         let isRotating = false;
-        // let isScaling = false;  // Commented out scaling variable
+        // let isScaling = false; // Commented out
         let previousTouchX = 0;
         let previousTouchY = 0;
-        // let previousPinchDistance = 0;  // Commented out pinch distance variable
+        // let previousPinchDistance = 0; // Commented out
 
         // Controller setup for AR
         const controller = renderer.xr.getController(0);
@@ -146,13 +121,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let isModelSelected = false;
 
         // Calculate distance between two touch points
-        /* Commented out getTouchDistance function
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
-        */
 
         const onTouchStart = (event) => {
             event.preventDefault();
@@ -174,28 +147,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     selectedObject = parent;
                     isRotating = true;
                     previousTouchX = event.touches[0].pageX;
-                    // isScaling = false;  // Commented out scaling reset
+                    // isScaling = false; // Commented out
                     isDragging = false;
                 }
             } else if (event.touches.length === 2) {
-                // Two finger touch for dragging only
-                touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
-                touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
+                // Two finger touch handling remains the same
+                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
 
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
+                if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
+                    touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1);
+                    touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1);
 
-                if (intersects.length > 0) {
-                    let parent = intersects[0].object;
-                    while (parent.parent && parent.parent !== scene) {
-                        parent = parent.parent;
+                    raycaster.setFromCamera(touches, camera);
+                    const intersects = raycaster.intersectObjects(placedItems, true);
+
+                    if (intersects.length > 0) {
+                        let parent = intersects[0].object;
+                        while (parent.parent && parent.parent !== scene) {
+                            parent = parent.parent;
+                        }
+                        selectedObject = parent;
+                        previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                        previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+                        isDragging = true;
+                        isRotating = false;
+                        // isScaling = false; // Commented out
                     }
-                    selectedObject = parent;
-                    previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                    previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                    isDragging = true;
+                } else {
+                    previousPinchDistance = currentPinchDistance;
+                    // isScaling = true; // Commented out
                     isRotating = false;
-                    // isScaling = false;  // Commented out scaling state
+                    isDragging = false;
                 }
             }
         };
@@ -206,10 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isRotating && event.touches.length === 1 && selectedObject) {
                 // Calculate rotation based on touch movement
                 const deltaX = event.touches[0].pageX - previousTouchX;
-                
+
                 // Only rotate around Y axis with proper sensitivity
-                selectedObject.rotateY(deltaX * 0.005);
-                
+                selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+
                 previousTouchX = event.touches[0].pageX;
             } else if (isDragging && event.touches.length === 2 && selectedObject) {
                 const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
@@ -217,15 +199,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const deltaX = (currentCenterX - previousTouchX) * 0.01;
                 const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                
+
                 selectedObject.position.x += deltaX;
                 selectedObject.position.z += deltaY;
 
                 previousTouchX = currentCenterX;
                 previousTouchY = currentCenterY;
-            }
-            /* Commented out scaling logic
-            else if (isScaling && event.touches.length === 2 && selectedObject) {
+            } /* else if (isScaling && event.touches.length === 2 && selectedObject) {
                 const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
                 const scaleFactor = currentPinchDistance / previousPinchDistance;
 
@@ -237,19 +217,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 previousPinchDistance = currentPinchDistance;
-            }
-            */
+            } */
         };
 
         const onTouchEnd = (event) => {
             if (event.touches.length === 0) {
                 isRotating = false;
                 isDragging = false;
-                // isScaling = false;  // Commented out scaling reset
+                // isScaling = false; // Commented out
                 selectedObject = null;
             }
         };
-
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -268,13 +246,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
             const isMenuOpen = sidebarMenu?.classList.contains("open");
-            
+
             if (!isClickInsideMenu && !isClickOnMenuButton && isMenuOpen) {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
 
-                reticle.visible = false; 
+                reticle.visible = false;
             }
         });
 
@@ -290,24 +268,24 @@ document.addEventListener("DOMContentLoaded", () => {
             sidebarMenu.classList.remove("open");
             closeButton.style.display = "none";
             menuButton.style.display = "block";
+            // Hide reticle when menu is closed
             if (!isModelSelected) {
                 reticle.visible = false;
             }
         });
-
         // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
                 event.stopPropagation();
                 const clickedSubmenu = icon.querySelector(".submenu");
-                
+
                 document.querySelectorAll('.submenu').forEach(submenu => {
                     if (submenu !== clickedSubmenu) {
                         submenu.classList.remove('open');
                     }
                 });
-                
+
                 clickedSubmenu.classList.toggle("open");
             });
         });
@@ -320,29 +298,31 @@ document.addEventListener("DOMContentLoaded", () => {
             scene.add(previewItem);
             setOpacity(previewItem, 0.5);
             confirmButtons.style.display = "flex";
+            // Set model selected state to true
             isModelSelected = true;
         };
-
         const placeModel = () => {
             if (previewItem && reticle.visible) {
                 const clone = deepClone(previewItem);
                 setOpacity(clone, 1.0);
-                
+
                 const position = new THREE.Vector3();
                 const rotation = new THREE.Quaternion();
                 const scale = new THREE.Vector3();
                 reticle.matrix.decompose(position, rotation, scale);
-                
+
                 clone.position.copy(position);
                 clone.quaternion.copy(rotation);
                 clone.scale.copy(scale);
-                
+
                 scene.add(clone);
                 placedItems.push(clone);
-                
+
+                // Reset model selected state and hide reticle
                 isModelSelected = false;
                 reticle.visible = false;
-                
+
+                // Clear the preview and hide confirmation buttons
                 cancelModel();
             }
         };
@@ -353,7 +333,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 scene.remove(previewItem);
                 previewItem = null;
             }
+            // Set model selected state to false
             isModelSelected = false;
+            // Hide reticle
             reticle.visible = false;
         };
 
@@ -366,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const item = new THREE.Group();
                     item.add(model.scene);
-                    
+
                     loadedModels.set(`${category}-${itemInfo.name}`, item);
 
                     const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
@@ -397,36 +379,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 const referenceSpace = renderer.xr.getReferenceSpace();
                 const session = renderer.xr.getSession();
 
-        if (!hitTestSourceRequested) {
-            session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                    hitTestSource = source;
-                });
-            });
-            hitTestSourceRequested = true;
-        }
-
-        if (hitTestSource) {
-            const hitTestResults = frame.getHitTestResults(hitTestSource);
-            if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
-                const hit = hitTestResults[0];
-                reticle.visible = true;
-                reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-
-                if (previewItem) {
-                    const position = new THREE.Vector3();
-                    const rotation = new THREE.Quaternion();
-                    const scale = new THREE.Vector3();
-                    reticle.matrix.decompose(position, rotation, scale);
-                    
-                    previewItem.position.copy(position);
-                    previewItem.quaternion.copy(rotation);
+                if (!hitTestSourceRequested) {
+                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                            hitTestSource = source;
+                        });
+                    });
+                    hitTestSourceRequested = true;
                 }
-            } else {
-                reticle.visible = false;
+
+                if (hitTestSource) {
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+                    if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
+                        const hit = hitTestResults[0];
+                        reticle.visible = true;
+                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+                        if (previewItem) {
+                            const position = new THREE.Vector3();
+                            const rotation = new THREE.Quaternion();
+                            const scale = new THREE.Vector3();
+                            reticle.matrix.decompose(position, rotation, scale);
+
+                            previewItem.position.copy(position);
+                            previewItem.quaternion.copy(rotation);
+                        }
+                    } else {
+                        reticle.visible = false;
+                    }
+                }
             }
-        }
-    }
 
             renderer.render(scene, camera);
         });
