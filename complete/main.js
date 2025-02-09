@@ -233,75 +233,125 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        const showModel = (model) => {
-            // Remove existing preview if any
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
-            
-            // Create a new instance of the model
-            const newModel = new THREE.Group();
-            
-            // Clone the model and its materials
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    const clonedMesh = child.clone();
-                    // Clone and modify material
-                    clonedMesh.material = child.material.clone();
-                    clonedMesh.material.transparent = true;
-                    clonedMesh.material.opacity = 0.5;
-                    newModel.add(clonedMesh);
-                }
-            });
-            
-            previewItem = newModel;
-            scene.add(previewItem);
-            confirmButtons.style.display = "flex";
-            isModelSelected = true;
-            reticle.visible = true; // Make sure reticle is visible when showing model
-        };
+       const showModel = (model) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
 
-        const placeModel = () => {
-            if (previewItem && reticle.visible) {
-                // Create a new instance for the final placed model
-                const finalModel = new THREE.Group();
-                
-                // Clone the preview model with opaque materials
-                previewItem.traverse((child) => {
-                    if (child.isMesh) {
-                        const placedMesh = child.clone();
-                        // Clone and modify material
-                        placedMesh.material = child.material.clone();
-                        placedMesh.material.transparent = false;
-                        placedMesh.material.opacity = 1.0;
-                        finalModel.add(placedMesh);
-                    }
-                });
-                
-                // Get position from reticle
-                const position = new THREE.Vector3();
-                const rotation = new THREE.Quaternion();
-                const scale = new THREE.Vector3();
-                reticle.matrix.decompose(position, rotation, scale);
-                
-                // Apply transformation
-                finalModel.position.copy(position);
-                finalModel.quaternion.copy(rotation);
-                
-                // Add to scene and tracking array
-                scene.add(finalModel);
-                placedItems.push(finalModel);
-                
-                // Reset state
-                isModelSelected = false;
-                reticle.visible = false;
-                
-                // Clean up preview
-                scene.remove(previewItem);
-                previewItem = null;
-                confirmButtons.style.display = "none";
+    const newModel = new THREE.Group();
+
+    model.traverse((child) => {
+        if (child.isMesh) {
+            const clonedMesh = child.clone();
+            clonedMesh.material = child.material.clone(); // Clone the material
+            clonedMesh.material.transparent = true;
+            clonedMesh.material.opacity = 0.5; // Semi-transparent preview
+            newModel.add(clonedMesh);
+        }
+    });
+
+    previewItem = newModel;
+    scene.add(previewItem);
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
+    reticle.visible = true;
+};
+
+const placeModel = () => {
+    if (previewItem && reticle.visible) {
+        const finalModel = new THREE.Group();
+
+        previewItem.traverse((child) => {
+            if (child.isMesh) {
+                const placedMesh = child.clone();
+                placedMesh.material = child.material.clone(); // Ensure a separate material instance
+                placedMesh.material.transparent = false;
+                placedMesh.material.opacity = 1.0; // Fully visible
+                finalModel.add(placedMesh);
             }
-        };
+        });
+
+        // Get position from reticle
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+
+        finalModel.position.copy(position);
+        finalModel.quaternion.copy(rotation);
+
+        scene.add(finalModel);
+        placedItems.push(finalModel);
+
+        isModelSelected = false;
+        reticle.visible = false;
+
+        // Cleanup preview
+        scene.remove(previewItem);
+        previewItem = null;
+        confirmButtons.style.display = "none";
+    }
+};
+const showModel = (model) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+
+    const newModel = new THREE.Group();
+
+    model.traverse((child) => {
+        if (child.isMesh) {
+            const clonedMesh = child.clone();
+            clonedMesh.material = child.material.clone(); // Clone the material
+            clonedMesh.material.transparent = true;
+            clonedMesh.material.opacity = 0.5; // Semi-transparent preview
+            newModel.add(clonedMesh);
+        }
+    });
+
+    previewItem = newModel;
+    scene.add(previewItem);
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
+    reticle.visible = true;
+};
+
+const placeModel = () => {
+    if (previewItem && reticle.visible) {
+        const finalModel = new THREE.Group();
+
+        previewItem.traverse((child) => {
+            if (child.isMesh) {
+                const placedMesh = child.clone();
+                placedMesh.material = child.material.clone(); // Ensure a separate material instance
+                placedMesh.material.transparent = false;
+                placedMesh.material.opacity = 1.0; // Fully visible
+                finalModel.add(placedMesh);
+            }
+        });
+
+        // Get position from reticle
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+
+        finalModel.position.copy(position);
+        finalModel.quaternion.copy(rotation);
+
+        scene.add(finalModel);
+        placedItems.push(finalModel);
+
+        isModelSelected = false;
+        reticle.visible = false;
+
+        // Cleanup preview
+        scene.remove(previewItem);
+        previewItem = null;
+        confirmButtons.style.display = "none";
+    }
+};
+
 
         const cancelModel = () => {
             if (previewItem) {
