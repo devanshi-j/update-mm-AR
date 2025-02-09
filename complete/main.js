@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectedObject = null;
             }
         };
+
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -273,6 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 reticle.visible = false;
             }
         });
+
         // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
@@ -290,28 +292,28 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-       const showModel = (item) => {
-    if (previewItem) {
-        scene.remove(previewItem);
-    }
-    
-    // Deep clone the item and set opacity
-    const modelClone = item.clone();
-    modelClone.traverse((child) => {
-        if (child.isMesh) {
-            child.material = child.material.clone();
-            child.material.transparent = true;
-            child.material.opacity = 0.5; // Set the desired opacity
-        }
-    });
+        const showModel = (item) => {
+            if (previewItem) {
+                scene.remove(previewItem);
+            }
 
-    previewItem = modelClone;
-    scene.add(previewItem);
-    confirmButtons.style.display = "flex";
-    // Set model selected state to true
-    isModelSelected = true;
-};
-        
+            // Deep clone the item and set opacity
+            const modelClone = item.clone();
+            modelClone.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.material.opacity = 0.5; // Set the desired opacity
+                }
+            });
+
+            previewItem = modelClone;
+            scene.add(previewItem);
+            confirmButtons.style.display = "flex";
+            // Set model selected state to true
+            isModelSelected = true;
+        };
+
         const placeModel = () => {
             if (previewItem && reticle.visible) {
                 const clone = deepClone(previewItem);
