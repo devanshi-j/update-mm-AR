@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // let isScaling = false; // Commented out
         let previousTouchX = 0;
         let previousTouchY = 0;
-        // let previousPinchDistance = 0; // Commented out
+        let previousPinchDistance = 0; // Initialize this variable
 
         // Controller setup for AR
         const controller = renderer.xr.getController(0);
