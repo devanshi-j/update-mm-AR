@@ -22,16 +22,6 @@ const setOpacity = (obj, opacity) => {
     });
 };
 
-const deepClone = (obj) => {
-    const newObj = obj.clone();
-    newObj.traverse((o) => {
-        if (o.isMesh) {
-            o.material = o.material.clone();
-        }
-    });
-    return newObj;
-};
-
 const itemCategories = {
     table: [
         { name: "table1", height: 0.5 },
@@ -97,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // let isScaling = false; // Commented out
         let previousTouchX = 0;
         let previousTouchY = 0;
-        let previousPinchDistance = 0; // Initialize this variable
+        // let previousPinchDistance = 0; // Commented out
 
         // Controller setup for AR
         const controller = renderer.xr.getController(0);
