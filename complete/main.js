@@ -17,8 +17,15 @@ const setOpacity = (obj, opacity) => {
     console.log('setOpacity called with opacity:', opacity);
     obj.traverse((child) => {
         if (child.isMesh) {
-            child.material.transparent = true;
-            child.material.opacity = opacity;
+            if (child.material) {
+                // Ensure the material is transparent
+                child.material.transparent = true;
+                child.material.opacity = opacity;
+                // If the material is not already transparent, clone it
+                if (!child.material.transparent) {
+                    child.material = child.material.clone();
+                }
+            }
         }
     });
 };
@@ -27,8 +34,9 @@ const deepClone = (obj) => {
     console.log('deepClone called');
     const newObj = obj.clone();
     newObj.traverse((o) => {
-        if (o.isMesh) {
-            o.material = o.material.clone();
+        if (o.isMesh && o.material) {
+            o.material = o.material.clone(); // Clone the material
+            o.material.needsUpdate = true; // Ensure the material is updated
         }
     });
     return newObj;
@@ -299,10 +307,10 @@ const onTouchEnd = (event) => {
         });
 const showModel = (item) => {
     const previewItem = deepClone(item);
-    setOpacity(previewItem, 0.5);
+    setOpacity(previewItem, 0.5); // Set opacity to 0.5 for preview
     selectedModels.push(previewItem);
     
-    selectedModels.forEach((model, index) => {
+    selectedModels.forEach((model) => {
         if (!scene.children.includes(model)) {
             scene.add(model);
         }
