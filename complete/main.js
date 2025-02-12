@@ -317,7 +317,7 @@ const showModel = (item) => {
 const updateActivePreview = () => {
     selectedModels.forEach((model, index) => {
         if (index === activePreviewIndex) {
-            setOpacity(model, 0.3);
+            setOpacity(model, 0.5);
             model.visible = true;
         } else {
             model.visible = false;
