@@ -14,6 +14,7 @@ const normalizeModel = (obj, height) => {
 };
 
 const setOpacity = (obj, opacity) => {
+    console.log('setOpacity called with opacity:', opacity);
     obj.traverse((child) => {
         if (child.isMesh) {
             child.material.transparent = true;
@@ -23,6 +24,7 @@ const setOpacity = (obj, opacity) => {
 };
 
 const deepClone = (obj) => {
+    console.log('deepClone called');
     const newObj = obj.clone();
     newObj.traverse((o) => {
         if (o.isMesh) {
@@ -31,7 +33,6 @@ const deepClone = (obj) => {
     });
     return newObj;
 };
-
 const itemCategories = {
     table: [
         { name: "table1", height: 0.5 },
@@ -316,7 +317,7 @@ const showModel = (item) => {
 const updateActivePreview = () => {
     selectedModels.forEach((model, index) => {
         if (index === activePreviewIndex) {
-            setOpacity(model, 0.5);
+            setOpacity(model, 0.3);
             model.visible = true;
         } else {
             model.visible = false;
