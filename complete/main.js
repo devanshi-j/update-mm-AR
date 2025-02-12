@@ -307,9 +307,12 @@ const onTouchEnd = (event) => {
         });
 const showModel = (item) => {
     const previewItem = deepClone(item);
-    setOpacity(previewItem, 0.5); // Set opacity to 0.5 for preview
+    setOpacity(previewItem, 0.5);
     selectedModels.push(previewItem);
     
+    // Update activePreviewIndex to the last added model
+    activePreviewIndex = selectedModels.length - 1;
+
     selectedModels.forEach((model) => {
         if (!scene.children.includes(model)) {
             scene.add(model);
@@ -319,6 +322,21 @@ const showModel = (item) => {
     confirmButtons.style.display = "flex";
     isModelSelected = true;
     updateActivePreview();
+};
+
+// Example of navigating through models
+const nextModel = () => {
+    if (selectedModels.length > 0) {
+        activePreviewIndex = (activePreviewIndex + 1) % selectedModels.length; // Loop back to start
+        updateActivePreview();
+    }
+};
+
+const previousModel = () => {
+    if (selectedModels.length > 0) {
+        activePreviewIndex = (activePreviewIndex - 1 + selectedModels.length) % selectedModels.length; // Loop to end
+        updateActivePreview();
+    }
 };
 
 // Function to update which model is currently being previewed
