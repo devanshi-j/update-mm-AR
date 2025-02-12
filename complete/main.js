@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.add(light);
         scene.add(directionalLight);
 
-        const arButton = ARButton.createButton(renderer, {
+         const arButton = ARButton.createButton(renderer, {
             requiredFeatures: ["hit-test"],
             optionalFeatures: ["dom-overlay"],
             domOverlay: { root: document.body },
@@ -79,14 +79,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         document.body.appendChild(arButton);
 
-        // Handle XR session
-        renderer.xr.addEventListener("sessionstart", () => {
-            console.log("AR session started");
-        });
 
-        renderer.xr.addEventListener("sessionend", () => {
-            console.log("AR session ended");
-        });
+// Handle XR session start
+renderer.xr.addEventListener("sessionstart", () => {
+    console.log("AR session started");
+});
+
+renderer.xr.addEventListener("sessionend", () => {
+    console.log("AR session ended");
+});
+
+document.body.appendChild(arButton);
+
+
 
         // Raycaster setup
         const raycaster = new THREE.Raycaster();
@@ -114,12 +119,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Model Management
         const loadedModels = new Map();
-        const selectedModels = new Map(); // Store selected models before placement
         const placedItems = [];
-        let currentPreviewItem = null;
+        let previewItem = null;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let isModelSelected = false;
+        let selectedModels = [];
+        let activePreviewIndex = 0;
 
         // Calculate distance between two touch points
         const getTouchDistance = (touch1, touch2) => {
@@ -129,100 +135,106 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const onTouchStart = (event) => {
-            event.preventDefault();
+    event.preventDefault();
 
-            if (event.touches.length === 1) {
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+    if (event.touches.length === 1) {
+        // Single touch for rotation
+        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
 
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
+        raycaster.setFromCamera(touches, camera);
+        const intersects = raycaster.intersectObjects(placedItems, true);
 
-                if (intersects.length > 0) {
-                    let parent = intersects[0].object;
-                    while (parent.parent && parent.parent !== scene) {
-                        parent = parent.parent;
-                    }
-                    selectedObject = parent;
-                    isRotating = true;
-                    previousTouchX = event.touches[0].pageX;
-                    isScaling = false;
-                    isDragging = false;
-                }
-            } else if (event.touches.length === 2) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-
-                if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-                    touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
-                    touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
-
-                    raycaster.setFromCamera(touches, camera);
-                    const intersects = raycaster.intersectObjects(placedItems, true);
-
-                    if (intersects.length > 0) {
-                        let parent = intersects[0].object;
-                        while (parent.parent && parent.parent !== scene) {
-                            parent = parent.parent;
-                        }
-                        selectedObject = parent;
-                        previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                        previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                        isDragging = true;
-                        isRotating = false;
-                        isScaling = false;
-                    }
-                } else {
-                    previousPinchDistance = currentPinchDistance;
-                    isScaling = true;
-                    isRotating = false;
-                    isDragging = false;
-                }
+        if (intersects.length > 0) {
+            // Find the top-level parent object (the placed model)
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
             }
-        };
+            selectedObject = parent;
+            isRotating = true;
+            previousTouchX = event.touches[0].pageX;
+            isScaling = false;
+            isDragging = false;
+        }
+    } else if (event.touches.length === 2) {
+        // Two finger touch handling remains the same
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
 
-        const onTouchMove = (event) => {
-            event.preventDefault();
+        if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
+            touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
+            touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
 
-            if (isRotating && event.touches.length === 1 && selectedObject) {
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotateY(deltaX * 0.005);
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 2 && selectedObject) {
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+            raycaster.setFromCamera(touches, camera);
+            const intersects = raycaster.intersectObjects(placedItems, true);
 
-                const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
-
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
-            } else if (isScaling && event.touches.length === 2 && selectedObject) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const scaleFactor = currentPinchDistance / previousPinchDistance;
-
-                if (scaleFactor !== 1) {
-                    const newScale = selectedObject.scale.x * scaleFactor;
-                    if (newScale >= 0.5 && newScale <= 2) {
-                        selectedObject.scale.multiplyScalar(scaleFactor);
-                    }
+            if (intersects.length > 0) {
+                let parent = intersects[0].object;
+                while (parent.parent && parent.parent !== scene) {
+                    parent = parent.parent;
                 }
-
-                previousPinchDistance = currentPinchDistance;
-            }
-        };
-
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
+                selectedObject = parent;
+                previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+                isDragging = true;
                 isRotating = false;
-                isDragging = false;
                 isScaling = false;
-                selectedObject = null;
             }
-        };
+        } else {
+            previousPinchDistance = currentPinchDistance;
+            isScaling = true;
+            isRotating = false;
+            isDragging = false;
+        }
+    }
+};
 
+const onTouchMove = (event) => {
+    event.preventDefault();
+
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        // Calculate rotation based on touch movement
+        const deltaX = event.touches[0].pageX - previousTouchX;
+        
+        // Only rotate around Y axis with proper sensitivity
+        selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+        
+        previousTouchX = event.touches[0].pageX;
+    } else if (isDragging && event.touches.length === 2 && selectedObject) {
+        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+
+        const deltaX = (currentCenterX - previousTouchX) * 0.01;
+        const deltaY = (currentCenterY - previousTouchY) * 0.01;
+        
+        selectedObject.position.x += deltaX;
+        selectedObject.position.z += deltaY;
+
+        previousTouchX = currentCenterX;
+        previousTouchY = currentCenterY;
+    } else if (isScaling && event.touches.length === 2 && selectedObject) {
+        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        const scaleFactor = currentPinchDistance / previousPinchDistance;
+
+        if (scaleFactor !== 1) {
+            const newScale = selectedObject.scale.x * scaleFactor;
+            if (newScale >= 0.5 && newScale <= 2) {
+                selectedObject.scale.multiplyScalar(scaleFactor);
+            }
+        }
+
+        previousPinchDistance = currentPinchDistance;
+    }
+};
+
+const onTouchEnd = (event) => {
+    if (event.touches.length === 0) {
+        isRotating = false;
+        isDragging = false;
+        isScaling = false;
+        selectedObject = null;
+    }
+};
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -246,7 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
-                reticle.visible = false;
+
+                reticle.visible = false; 
             }
         });
 
@@ -257,162 +270,172 @@ document.addEventListener("DOMContentLoaded", () => {
             closeButton.style.display = "block";
         });
 
-        closeButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sidebarMenu.classList.remove("open");
-            closeButton.style.display = "none";
-            menuButton.style.display = "block";
-            if (!isModelSelected) {
-                reticle.visible = false;
-            }
+       closeButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    sidebarMenu.classList.remove("open");
+    closeButton.style.display = "none";
+    menuButton.style.display = "block";
+    // Hide reticle when menu is closed
+    if (!isModelSelected) {
+        reticle.visible = false;
+    }
+});
+        // Category handlers
+        const icons = document.querySelectorAll(".icon");
+        icons.forEach((icon) => {
+            icon.addEventListener("click", (event) => {
+                event.stopPropagation();
+                const clickedSubmenu = icon.querySelector(".submenu");
+                
+                document.querySelectorAll('.submenu').forEach(submenu => {
+                    if (submenu !== clickedSubmenu) {
+                        submenu.classList.remove('open');
+                    }
+                });
+                
+                clickedSubmenu.classList.toggle("open");
+            });
+        });
+const showModel = (item) => {
+    const previewItem = deepClone(item);
+    setOpacity(previewItem, 0.5);
+    selectedModels.push(previewItem);
+    
+    selectedModels.forEach((model, index) => {
+        if (!scene.children.includes(model)) {
+            scene.add(model);
+        }
+    });
+    
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
+    updateActivePreview();
+};
+
+// Function to update which model is currently being previewed
+const updateActivePreview = () => {
+    selectedModels.forEach((model, index) => {
+        if (index === activePreviewIndex) {
+            setOpacity(model, 0.5);
+            model.visible = true;
+        } else {
+            model.visible = false;
+        }
+    });
+};
+
+// Modified placeModel function
+const placeModel = () => {
+    if (selectedModels.length > 0 && reticle.visible) {
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+
+        selectedModels.forEach((model, index) => {
+            const clone = deepClone(model);
+            setOpacity(clone, 1.0);
+            
+            // Calculate offset position for spacing models
+            const offsetPosition = position.clone();
+            offsetPosition.x += index * 0.5;
+            
+            clone.position.copy(offsetPosition);
+            clone.quaternion.copy(rotation);
+            clone.scale.copy(scale);
+            
+            scene.add(clone);
+            placedItems.push(clone);
         });
 
-        // Handle model selection and preview
-        const addModelToSelection = (modelId, model) => {
-            const modelClone = deepClone(model);
-            setOpacity(modelClone, 0.5);
-            selectedModels.set(modelId, modelClone);
+        // Reset selection state
+        cancelModel();
+    }
+};
+
+// Modified cancelModel function
+const cancelModel = () => {
+    confirmButtons.style.display = "none";
+    selectedModels.forEach(model => {
+        scene.remove(model);
+    });
+    selectedModels = [];
+    activePreviewIndex = 0;
+    isModelSelected = false;
+    reticle.visible = false;
+};
+
+      for (const category in itemCategories) {
+    for (const itemInfo of itemCategories[category]) {
+        try {
+            const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
+            normalizeModel(model.scene, itemInfo.height);
+
+            const item = new THREE.Group();
+            item.add(model.scene);
             
-            // Update current preview
-            updatePreview();
-            
-            confirmButtons.style.display = "flex";
-            isModelSelected = true;
-        };
+            loadedModels.set(`${category}-${itemInfo.name}`, item);
 
-        const updatePreview = () => {
-            // Remove current preview if it exists
-            if (currentPreviewItem) {
-                scene.remove(currentPreviewItem);
-            }
-
-            // Create a new group for all selected models
-            currentPreviewItem = new THREE.Group();
-            
-            // Add all selected models to the preview group
-            let offset = 0;
-            selectedModels.forEach((model) => {
-                const modelClone = deepClone(model);
-                modelClone.position.x = offset;
-                currentPreviewItem.add(modelClone);
-                offset += 1; // Adjust spacing between models
-            });
-
-            scene.add(currentPreviewItem);
-        };
-
-        const placeModel = () => {
-            if (currentPreviewItem && reticle.visible) {
-                const finalGroup = new THREE.Group();
-                
-                // Clone and set opacity for each model in the group
-                currentPreviewItem.children.forEach((model, index) => {
-                    const finalModel = deepClone(model);
-                    setOpacity(finalModel, 1.0);
-                    finalGroup.add(finalModel);
-                });
-
-                const position = new THREE.Vector3();
-                const rotation = new THREE.Quaternion();
-                const scale = new THREE.Vector3();
-                reticle.matrix.decompose(position, rotation, scale);
-
-                finalGroup.position.copy(position);
-                finalGroup.quaternion.copy(rotation);
-                
-                scene.add(finalGroup);
-                placedItems.push(finalGroup);
-
-                // Reset everything
-                selectedModels.clear();
-                isModelSelected = false;
-                reticle.visible = false;
-                cancelModel();
-            }
-        };
-
-        const cancelModel = () => {
-            confirmButtons.style.display = "none";
-            if (currentPreviewItem) {
-                scene.remove(currentPreviewItem);
-                currentPreviewItem = null;
-            }
-            selectedModels.clear();
-            isModelSelected = false;
-            reticle.visible = false;
-        };
-
-        // Load models
-        for (const category in itemCategories) {
-            for (const itemInfo of itemCategories[category]) {
-                try {
-                    const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
-                    normalizeModel(model.scene, itemInfo.height);
-
-                    const item = new THREE.Group();
-                    item.add(model.scene);
-                    
-                    const modelId = `${category}-${itemInfo.name}`;
-                    loadedModels.set(modelId, item);
-
-                    const thumbnail = document.querySelector(`#${modelId}`);
-                    if (thumbnail) {
-                        thumbnail.addEventListener("click", (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const model = loadedModels.get(modelId);
-                            if (model) {
-                                addModelToSelection(modelId, model);
-                            }
-                        });
+            const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
+            if (thumbnail) {
+                thumbnail.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const model = loadedModels.get(`${category}-${itemInfo.name}`);
+                    if (model) {
+                        showModel(model);
                     }
-                } catch (error) {
-                    console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
-                }
+                });
             }
+        } catch (error) {
+            console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
         }
-
+    }
+}
         // Button Event Listeners
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
 
-        // AR Session and Render Loop
-        renderer.setAnimationLoop((timestamp, frame) => {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
+       renderer.setAnimationLoop((timestamp, frame) => {
+    if (frame) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
 
-                if (!hitTestSourceRequested) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    hitTestSourceRequested = true;
-                }
+        if (!hitTestSourceRequested) {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                    hitTestSource = source;
+                });
+            });
+            hitTestSourceRequested = true;
+        }
 
-                if (hitTestSource) {
+        if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
-            if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
+            if (hitTestResults.length > 0 && isModelSelected) {
                 const hit = hitTestResults[0];
                 reticle.visible = true;
                 reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
 
-                if (previewItem) {
+                if (selectedModels.length > 0) {
                     const position = new THREE.Vector3();
                     const rotation = new THREE.Quaternion();
                     const scale = new THREE.Vector3();
                     reticle.matrix.decompose(position, rotation, scale);
                     
-                    previewItem.position.copy(position);
-                    previewItem.quaternion.copy(rotation);
+                    // Update position of visible model
+                    selectedModels.forEach(model => {
+                        if (model.visible) {
+                            model.position.copy(position);
+                            model.quaternion.copy(rotation);
+                        }
+                    });
                 }
             } else {
                 reticle.visible = false;
             }
         }
     }
-
             renderer.render(scene, camera);
         });
 
