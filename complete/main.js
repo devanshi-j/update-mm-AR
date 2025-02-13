@@ -285,16 +285,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 reticle.visible = false;
             }
         });
+       
+        
         deleteButton.addEventListener("click", () => {
-            if (selectedObject) {
-                scene.remove(selectedObject);
-                placedItems = placedItems.filter(item => item !== selectedObject);
-                selectedObject = null;
-
-                // Hide the delete button after deletion
-                deleteButton.style.display = "none";
-            }
+        if (selectedModels.length > 0) {
+        selectedModels.forEach((model) => {
+            scene.remove(model);
+            placedItems = placedItems.filter(item => item !== model);
         });
+
+        // Clear the selection after deletion
+        selectedModels.length = 0;
+
+        // Hide the delete button after deletion
+        deleteButton.style.display = "none";
+    }
+});
+
 
         // Category handlers
         const icons = document.querySelectorAll(".icon");
