@@ -2,7 +2,7 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
-// Utility functions
+// Utility functions remain the same...
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
@@ -27,14 +27,11 @@ const setOpacityForSelected = (opacity) => {
 const deepCloneSelectedModels = () => {
     return selectedModels.map((model) => {
         const clone = model.clone(true);
-
-        // Ensure materials are cloned properly
-        clone.traverse((child, index) => {
+        clone.traverse((child) => {
             if (child.isMesh) {
                 child.material = child.material.clone();
             }
         });
-
         return clone;
     });
 };
@@ -244,14 +241,18 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
         renderer.domElement.addEventListener('touchend', onTouchEnd, false);
 
-        // UI Elements setup
+        document.addEventListener("DOMContentLoaded", () => {
+    const initialize = async () => {
+        // Get existing UI elements
         const menuButton = document.getElementById("menu-button");
         const closeButton = document.getElementById("close-button");
         const sidebarMenu = document.getElementById("sidebar-menu");
         const confirmButtons = document.getElementById("confirm-buttons");
-        const placeButton = document.querySelector("#place");
-        const cancelButton = document.querySelector("#cancel");
-        const deleteButton = document.querySelector("#delete");
+        const placeButton = document.getElementById("place");
+        const cancelButton = document.getElementById("cancel");
+        const deleteButton = document.getElementById("delete-button"); // Note the ID change to match HTML
+        const surfaceIndicator = document.getElementById("surface-indicator");
+        const statusMessage = document.getElementById("status-message");
 
         // Menu event handlers
         document.addEventListener("click", (event) => {
@@ -286,30 +287,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
        
-        
-        deleteButton.addEventListener("click", () => {
-        if (selectedModels.length > 0) {
-        selectedModels.forEach((model) => {
-            scene.remove(model);
-            placedItems = placedItems.filter(item => item !== model);
-        });
-
-        // Clear the selection after deletion
-        selectedModels.length = 0;
-
-        // Hide the delete button after deletion
-        deleteButton.style.display = "none";
-    }
-});
-
-
-        // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
                 event.stopPropagation();
                 const clickedSubmenu = icon.querySelector(".submenu");
-
+                
                 document.querySelectorAll('.submenu').forEach(submenu => {
                     if (submenu !== clickedSubmenu) {
                         submenu.classList.remove('open');
@@ -320,21 +303,21 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+      
         const showModel = (item) => {
             if (previewItem) {
                 scene.remove(previewItem);
             }
             previewItem = item;
             scene.add(previewItem);
-            setOpacity(previewItem, 0.5);
+            setOpacityForSelected(0.5);
             confirmButtons.style.display = "flex";
-            // Set model selected state to true
             isModelSelected = true;
         };
+
         const placeModel = () => {
             if (selectedModels.length > 0 && reticle.visible) {
                 const clonedModels = deepCloneSelectedModels();
-                setOpacityForSelected(0.5);
 
                 const position = new THREE.Vector3();
                 const rotation = new THREE.Quaternion();
@@ -344,72 +327,76 @@ document.addEventListener("DOMContentLoaded", () => {
                 clonedModels.forEach((clone) => {
                     clone.position.copy(position);
                     clone.quaternion.copy(rotation);
-                    clone.scale.copy(scale);
-                    scene.add(clone);  // Ensure the clone is added to the scene
+                    scene.add(clone);
                     placedModels.push(clone);
                 });
 
                 selectedModels.length = 0;
                 isModelSelected = false;
                 reticle.visible = false;
-            }
-        };
-
-       const deleteModel = () => {
-            if (selectedObject) {
-                scene.remove(selectedObject);
-                placedItems = placedItems.filter(item => item !== selectedObject);
-                selectedObject = null;
-                deleteButton.style.display = "none";
+                confirmButtons.style.display = "none";
             }
         };
 
         const cancelModel = () => {
-            confirmButtons.style.display = "none";
             if (previewItem) {
                 scene.remove(previewItem);
                 previewItem = null;
             }
-            // Set model selected state to false
             isModelSelected = false;
-            // Hide reticle
             reticle.visible = false;
+            confirmButtons.style.display = "none";
         };
 
-        // Load models
-        for (const category in itemCategories) {
-            for (const itemInfo of itemCategories[category]) {
+        const deleteModel = () => {
+            if (selectedModels.length > 0) {
+                selectedModels.forEach((model) => {
+                    scene.remove(model);
+                    placedModels = placedModels.filter(item => item !== model);
+                });
+                selectedModels.length = 0;
+                deleteButton.style.display = "none";
+            }
+        };
+
+        // Button Event Listeners
+        placeButton.addEventListener("click", placeModel);
+        cancelButton.addEventListener("click", cancelModel);
+        deleteButton.addEventListener("click", deleteModel);
+
+        // Load models and set up thumbnails
+        const loadedModels = new Map();
+        
+        for (const category of ['table', 'chair', 'shelf']) {
+            for (let i = 1; i <= 3; i++) {
+                const itemName = `${category}${i}`;
                 try {
-                    const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
-                    normalizeModel(model.scene, itemInfo.height);
+                    const model = await loadGLTF(`../assets/models/${category}/${itemName}/scene.gltf`);
+                    normalizeModel(model.scene, 0.5); // Default height of 0.5
 
                     const item = new THREE.Group();
                     item.add(model.scene);
+                    loadedModels.set(`${category}-${itemName}`, item);
 
-                    loadedModels.set(`${category}-${itemInfo.name}`, item);
-
-                    const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
+                    const thumbnail = document.querySelector(`#${category}-${itemName}`);
                     if (thumbnail) {
                         thumbnail.addEventListener("click", (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            const model = loadedModels.get(`${category}-${itemInfo.name}`);
+                            const model = loadedModels.get(`${category}-${itemName}`);
                             if (model) {
-                                const modelClone = deepClone(model);
+                                const modelClone = model.clone(true);
                                 showModel(modelClone);
                             }
                         });
                     }
                 } catch (error) {
-                    console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
+                    console.error(`Error loading model ${category}/${itemName}:`, error);
                 }
             }
         }
 
-        // Button Event Listeners
-        placeButton.addEventListener("click", placeModel);
-            cancelButton.addEventListener("click", cancelModel);
-            deleteButton.addEventListener("click", deleteModel);
+       
 
         // AR Session and Render Loop
         renderer.setAnimationLoop((timestamp, frame) => {
