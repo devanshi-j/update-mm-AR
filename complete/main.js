@@ -350,5 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     };
+};
     initialize().catch(console.error);
+
 });
