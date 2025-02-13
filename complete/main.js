@@ -13,34 +13,33 @@ const normalizeModel = (obj, height) => {
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
-const setOpacity = (obj, opacity) => {
-    console.log('setOpacity called with opacity:', opacity);
-    obj.traverse((child) => {
-        if (child.isMesh) {
-            if (child.material) {
-                // Ensure the material is transparent
+const setOpacityForSelected = (opacity) => {
+    selectedModels.forEach((model) => {
+        model.traverse((child) => {
+            if (child.isMesh) {
                 child.material.transparent = true;
                 child.material.opacity = opacity;
-                // If the material is not already transparent, clone it
-                if (!child.material.transparent) {
-                    child.material = child.material.clone();
-                }
             }
-        }
+        });
     });
 };
 
-const deepClone = (obj) => {
-    console.log('deepClone called');
-    const newObj = obj.clone();
-    newObj.traverse((o) => {
-        if (o.isMesh && o.material) {
-            o.material = o.material.clone(); // Clone the material
-            o.material.needsUpdate = true; // Ensure the material is updated
-        }
+const deepCloneSelectedModels = () => {
+    return selectedModels.map((model) => {
+        const clone = model.clone(true);
+
+        // Ensure materials are cloned properly
+        clone.traverse((child, index) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+            }
+        });
+
+        return clone;
     });
-    return newObj;
 };
+
+
 const itemCategories = {
     table: [
         { name: "table1", height: 0.5 },
@@ -77,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.add(light);
         scene.add(directionalLight);
 
-         const arButton = ARButton.createButton(renderer, {
+        const arButton = ARButton.createButton(renderer, {
             requiredFeatures: ["hit-test"],
             optionalFeatures: ["dom-overlay"],
             domOverlay: { root: document.body },
@@ -89,16 +88,15 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(arButton);
 
 
-// Handle XR session start
-renderer.xr.addEventListener("sessionstart", () => {
-    console.log("AR session started");
-});
+        // Handle XR session start
+        renderer.xr.addEventListener("sessionstart", () => {
+            console.log("AR session started");
+        });
 
-renderer.xr.addEventListener("sessionend", () => {
-    console.log("AR session ended");
-});
+        renderer.xr.addEventListener("sessionend", () => {
+            console.log("AR session ended");
+        });
 
-document.body.appendChild(arButton);
 
 
 
@@ -128,13 +126,18 @@ document.body.appendChild(arButton);
 
         // Model Management
         const loadedModels = new Map();
-        const placedItems = [];
+        let placedItems = [];
         let previewItem = null;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let isModelSelected = false;
-        let selectedModels = [];
-        let activePreviewIndex = 0;
+        const selectedModels = []; // Holds models before placement
+
+        const selectModel = (model) => {
+            selectedModels.length = 0; // Clear previous selection
+            selectedModels.push(model);
+        };
+
 
         // Calculate distance between two touch points
         const getTouchDistance = (touch1, touch2) => {
@@ -144,106 +147,98 @@ document.body.appendChild(arButton);
         };
 
         const onTouchStart = (event) => {
-    event.preventDefault();
+            event.preventDefault();
 
-    if (event.touches.length === 1) {
-        // Single touch for rotation
-        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+            if (event.touches.length === 1) {
+                // Single touch: Selecting an object
+                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
 
-        raycaster.setFromCamera(touches, camera);
-        const intersects = raycaster.intersectObjects(placedItems, true);
+                raycaster.setFromCamera(touches, camera);
+                const intersects = raycaster.intersectObjects(placedItems, true);
 
-        if (intersects.length > 0) {
-            // Find the top-level parent object (the placed model)
-            let parent = intersects[0].object;
-            while (parent.parent && parent.parent !== scene) {
-                parent = parent.parent;
-            }
-            selectedObject = parent;
-            isRotating = true;
-            previousTouchX = event.touches[0].pageX;
-            isScaling = false;
-            isDragging = false;
-        }
-    } else if (event.touches.length === 2) {
-        // Two finger touch handling remains the same
-        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+                if (intersects.length > 0) {
+                    let parent = intersects[0].object;
+                    while (parent.parent && parent.parent !== scene) {
+                        parent = parent.parent;
+                    }
 
-        if (Math.abs(previousPinchDistance - currentPinchDistance) < 10) {
-            touches.x = (((event.touches[0].pageX + event.touches[1].pageX) / 2) / window.innerWidth) * 2 - 1;
-            touches.y = -(((event.touches[0].pageY + event.touches[1].pageY) / 2) / window.innerHeight) * 2 + 1;
+                    selectedObject = parent;
+                    isRotating = true;
+                    previousTouchX = event.touches[0].pageX;
+                    isScaling = false;
+                    isDragging = false;
 
-            raycaster.setFromCamera(touches, camera);
-            const intersects = raycaster.intersectObjects(placedItems, true);
-
-            if (intersects.length > 0) {
-                let parent = intersects[0].object;
-                while (parent.parent && parent.parent !== scene) {
-                    parent = parent.parent;
+                    // Show delete button near touch position
+                    deleteButton.style.left = `${event.touches[0].pageX}px`;
+                    deleteButton.style.top = `${event.touches[0].pageY}px`;
+                    deleteButton.style.display = "block";
                 }
-                selectedObject = parent;
-                previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                isDragging = true;
+            } else if (event.touches.length === 2) {
+                // Two fingers: Scaling
+                isScaling = true;
                 isRotating = false;
+                isDragging = false;
+
+                // Get initial distance between two touches
+                const dx = event.touches[0].pageX - event.touches[1].pageX;
+                const dy = event.touches[0].pageY - event.touches[1].pageY;
+                initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+            }
+        };
+
+
+        const onTouchMove = (event) => {
+            event.preventDefault();
+
+            if (isRotating && event.touches.length === 1 && selectedObject) {
+                // Calculate rotation based on touch movement
+                const deltaX = event.touches[0].pageX - previousTouchX;
+
+                // Only rotate around Y axis with proper sensitivity
+                selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
+
+                previousTouchX = event.touches[0].pageX;
+            } else if (isDragging && event.touches.length === 2 && selectedObject) {
+                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+
+                const deltaX = (currentCenterX - previousTouchX) * 0.01;
+                const deltaY = (currentCenterY - previousTouchY) * 0.01;
+
+                selectedObject.position.x += deltaX;
+                selectedObject.position.z += deltaY;
+
+                previousTouchX = currentCenterX;
+                previousTouchY = currentCenterY;
+            } else if (isScaling && event.touches.length === 2 && selectedObject) {
+                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+                const scaleFactor = currentPinchDistance / previousPinchDistance;
+
+                if (scaleFactor !== 1) {
+                    const newScale = selectedObject.scale.x * scaleFactor;
+                    if (newScale >= 0.5 && newScale <= 2) {
+                        selectedObject.scale.multiplyScalar(scaleFactor);
+                    }
+                }
+
+                previousPinchDistance = currentPinchDistance;
+            }
+        };
+
+        const onTouchEnd = (event) => {
+            if (event.touches.length === 0) {
+                isRotating = false;
+                isDragging = false;
                 isScaling = false;
+
+                if (!selectedObject) {
+                    deleteButton.style.display = "none";
+                }
+
+                selectedObject = null;
             }
-        } else {
-            previousPinchDistance = currentPinchDistance;
-            isScaling = true;
-            isRotating = false;
-            isDragging = false;
-        }
-    }
-};
-
-const onTouchMove = (event) => {
-    event.preventDefault();
-
-    if (isRotating && event.touches.length === 1 && selectedObject) {
-        // Calculate rotation based on touch movement
-        const deltaX = event.touches[0].pageX - previousTouchX;
-        
-        // Only rotate around Y axis with proper sensitivity
-        selectedObject.rotateY(deltaX * 0.005); // Reduced sensitivity for smoother rotation
-        
-        previousTouchX = event.touches[0].pageX;
-    } else if (isDragging && event.touches.length === 2 && selectedObject) {
-        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-
-        const deltaX = (currentCenterX - previousTouchX) * 0.01;
-        const deltaY = (currentCenterY - previousTouchY) * 0.01;
-        
-        selectedObject.position.x += deltaX;
-        selectedObject.position.z += deltaY;
-
-        previousTouchX = currentCenterX;
-        previousTouchY = currentCenterY;
-    } else if (isScaling && event.touches.length === 2 && selectedObject) {
-        const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-        const scaleFactor = currentPinchDistance / previousPinchDistance;
-
-        if (scaleFactor !== 1) {
-            const newScale = selectedObject.scale.x * scaleFactor;
-            if (newScale >= 0.5 && newScale <= 2) {
-                selectedObject.scale.multiplyScalar(scaleFactor);
-            }
-        }
-
-        previousPinchDistance = currentPinchDistance;
-    }
-};
-
-const onTouchEnd = (event) => {
-    if (event.touches.length === 0) {
-        isRotating = false;
-        isDragging = false;
-        isScaling = false;
-        selectedObject = null;
-    }
-};
+        };
         // Add touch event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -256,19 +251,20 @@ const onTouchEnd = (event) => {
         const confirmButtons = document.getElementById("confirm-buttons");
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
+        const deleteButton = document.querySelector("#delete");
 
         // Menu event handlers
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
             const isMenuOpen = sidebarMenu?.classList.contains("open");
-            
+
             if (!isClickInsideMenu && !isClickOnMenuButton && isMenuOpen) {
                 sidebarMenu.classList.remove("open");
                 closeButton.style.display = "none";
                 menuButton.style.display = "block";
 
-                reticle.visible = false; 
+                reticle.visible = false;
             }
         });
 
@@ -279,190 +275,179 @@ const onTouchEnd = (event) => {
             closeButton.style.display = "block";
         });
 
-       closeButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    sidebarMenu.classList.remove("open");
-    closeButton.style.display = "none";
-    menuButton.style.display = "block";
-    // Hide reticle when menu is closed
-    if (!isModelSelected) {
-        reticle.visible = false;
-    }
-});
+        closeButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            sidebarMenu.classList.remove("open");
+            closeButton.style.display = "none";
+            menuButton.style.display = "block";
+            // Hide reticle when menu is closed
+            if (!isModelSelected) {
+                reticle.visible = false;
+            }
+        });
+        deleteButton.addEventListener("click", () => {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                placedItems = placedItems.filter(item => item !== selectedObject);
+                selectedObject = null;
+
+                // Hide the delete button after deletion
+                deleteButton.style.display = "none";
+            }
+        });
+
         // Category handlers
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
                 event.stopPropagation();
                 const clickedSubmenu = icon.querySelector(".submenu");
-                
+
                 document.querySelectorAll('.submenu').forEach(submenu => {
                     if (submenu !== clickedSubmenu) {
                         submenu.classList.remove('open');
                     }
                 });
-                
+
                 clickedSubmenu.classList.toggle("open");
             });
         });
-const showModel = (item) => {
-    const previewItem = deepClone(item);
-    setOpacity(previewItem, 0.5);
-    selectedModels.push(previewItem);
-    
-    // Update activePreviewIndex to the last added model
-    activePreviewIndex = selectedModels.length - 1;
 
-    selectedModels.forEach((model) => {
-        if (!scene.children.includes(model)) {
-            scene.add(model);
-        }
-    });
-    
-    confirmButtons.style.display = "flex";
-    isModelSelected = true;
-    updateActivePreview();
-};
-
-// Example of navigating through models
-const nextModel = () => {
-    if (selectedModels.length > 0) {
-        activePreviewIndex = (activePreviewIndex + 1) % selectedModels.length; // Loop back to start
-        updateActivePreview();
-    }
-};
-
-const previousModel = () => {
-    if (selectedModels.length > 0) {
-        activePreviewIndex = (activePreviewIndex - 1 + selectedModels.length) % selectedModels.length; // Loop to end
-        updateActivePreview();
-    }
-};
-
-// Function to update which model is currently being previewed
-const updateActivePreview = () => {
-    selectedModels.forEach((model, index) => {
-        if (index === activePreviewIndex) {
-            setOpacity(model, 0.5);
-            model.visible = true;
-        } else {
-            model.visible = false;
-        }
-    });
-};
-
-// Modified placeModel function
-const placeModel = () => {
-    if (selectedModels.length > 0 && reticle.visible) {
-        const position = new THREE.Vector3();
-        const rotation = new THREE.Quaternion();
-        const scale = new THREE.Vector3();
-        reticle.matrix.decompose(position, rotation, scale);
-
-        selectedModels.forEach((model, index) => {
-            const clone = deepClone(model);
-            setOpacity(clone, 1.0);
-            
-            // Calculate offset position for spacing models
-            const offsetPosition = position.clone();
-            offsetPosition.x += index * 0.5;
-            
-            clone.position.copy(offsetPosition);
-            clone.quaternion.copy(rotation);
-            clone.scale.copy(scale);
-            
-            scene.add(clone);
-            placedItems.push(clone);
-        });
-
-        // Reset selection state
-        cancelModel();
-    }
-};
-
-// Modified cancelModel function
-const cancelModel = () => {
-    confirmButtons.style.display = "none";
-    selectedModels.forEach(model => {
-        scene.remove(model);
-    });
-    selectedModels = [];
-    activePreviewIndex = 0;
-    isModelSelected = false;
-    reticle.visible = false;
-};
-
-      for (const category in itemCategories) {
-    for (const itemInfo of itemCategories[category]) {
-        try {
-            const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
-            normalizeModel(model.scene, itemInfo.height);
-
-            const item = new THREE.Group();
-            item.add(model.scene);
-            
-            loadedModels.set(`${category}-${itemInfo.name}`, item);
-
-            const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
-            if (thumbnail) {
-                thumbnail.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const model = loadedModels.get(`${category}-${itemInfo.name}`);
-                    if (model) {
-                        showModel(model);
-                    }
-                });
+        const showModel = (item) => {
+            if (previewItem) {
+                scene.remove(previewItem);
             }
-        } catch (error) {
-            console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
-        }
-    }
-}
-        // Button Event Listeners
-        placeButton.addEventListener("click", placeModel);
-        cancelButton.addEventListener("click", cancelModel);
+            previewItem = item;
+            scene.add(previewItem);
+            setOpacity(previewItem, 0.5);
+            confirmButtons.style.display = "flex";
+            // Set model selected state to true
+            isModelSelected = true;
+        };
+        const placeModel = () => {
+            if (selectedModels.length > 0 && reticle.visible) {
+                const clonedModels = deepCloneSelectedModels();
+                setOpacityForSelected(0.5);
 
-       renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame) {
-        const referenceSpace = renderer.xr.getReferenceSpace();
-        const session = renderer.xr.getSession();
+                const position = new THREE.Vector3();
+                const rotation = new THREE.Quaternion();
+                const scale = new THREE.Vector3();
+                reticle.matrix.decompose(position, rotation, scale);
 
-        if (!hitTestSourceRequested) {
-            session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                    hitTestSource = source;
+                clonedModels.forEach((clone) => {
+                    clone.position.copy(position);
+                    clone.quaternion.copy(rotation);
+                    clone.scale.copy(scale);
+                    scene.add(clone);  // Ensure the clone is added to the scene
+                    placedModels.push(clone);
                 });
-            });
-            hitTestSourceRequested = true;
-        }
 
-        if (hitTestSource) {
-            const hitTestResults = frame.getHitTestResults(hitTestSource);
-            if (hitTestResults.length > 0 && isModelSelected) {
-                const hit = hitTestResults[0];
-                reticle.visible = true;
-                reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-
-                if (selectedModels.length > 0) {
-                    const position = new THREE.Vector3();
-                    const rotation = new THREE.Quaternion();
-                    const scale = new THREE.Vector3();
-                    reticle.matrix.decompose(position, rotation, scale);
-                    
-                    // Update position of visible model
-                    selectedModels.forEach(model => {
-                        if (model.visible) {
-                            model.position.copy(position);
-                            model.quaternion.copy(rotation);
-                        }
-                    });
-                }
-            } else {
+                selectedModels.length = 0;
+                isModelSelected = false;
                 reticle.visible = false;
             }
+        };
+
+        const deleteModel = () => {
+            if (selectedObject) {
+                // Remove from scene
+                scene.remove(selectedObject);
+
+                // Remove from placedItems array
+                const index = placedItems.indexOf(selectedObject);
+                if (index > -1) {
+                    placedItems.splice(index, 1);
+                }
+
+                // Reset selected object and hide delete button
+                selectedObject = null;
+                deleteButton.style.display = "none";
+            }
+
+        const cancelModel = () => {
+            confirmButtons.style.display = "none";
+            if (previewItem) {
+                scene.remove(previewItem);
+                previewItem = null;
+            }
+            // Set model selected state to false
+            isModelSelected = false;
+            // Hide reticle
+            reticle.visible = false;
+        };
+
+        // Load models
+        for (const category in itemCategories) {
+            for (const itemInfo of itemCategories[category]) {
+                try {
+                    const model = await loadGLTF(`../assets/models/${category}/${itemInfo.name}/scene.gltf`);
+                    normalizeModel(model.scene, itemInfo.height);
+
+                    const item = new THREE.Group();
+                    item.add(model.scene);
+
+                    loadedModels.set(`${category}-${itemInfo.name}`, item);
+
+                    const thumbnail = document.querySelector(`#${category}-${itemInfo.name}`);
+                    if (thumbnail) {
+                        thumbnail.addEventListener("click", (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const model = loadedModels.get(`${category}-${itemInfo.name}`);
+                            if (model) {
+                                const modelClone = deepClone(model);
+                                showModel(modelClone);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error loading model ${category}/${itemInfo.name}:`, error);
+                }
+            }
         }
-    }
+
+        // Button Event Listeners
+        placeButton.addEventListener("click", placeModel);
+            cancelButton.addEventListener("click", cancelModel);
+            deleteButton.addEventListener("click", deleteModel);
+
+        // AR Session and Render Loop
+        renderer.setAnimationLoop((timestamp, frame) => {
+            if (frame) {
+                const referenceSpace = renderer.xr.getReferenceSpace();
+                const session = renderer.xr.getSession();
+
+                if (!hitTestSourceRequested) {
+                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                            hitTestSource = source;
+                        });
+                    });
+                    hitTestSourceRequested = true;
+                }
+
+                if (hitTestSource) {
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+                    if (hitTestResults.length > 0 && isModelSelected) {  // Only show reticle if model is selected
+                        const hit = hitTestResults[0];
+                        reticle.visible = true;
+                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+
+                        if (previewItem) {
+                            const position = new THREE.Vector3();
+                            const rotation = new THREE.Quaternion();
+                            const scale = new THREE.Vector3();
+                            reticle.matrix.decompose(position, rotation, scale);
+
+                            previewItem.position.copy(position);
+                            previewItem.quaternion.copy(rotation);
+                        }
+                    } else {
+                        reticle.visible = false;
+                    }
+                }
+            }
+
             renderer.render(scene, camera);
         });
 
