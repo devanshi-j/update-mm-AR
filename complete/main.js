@@ -106,10 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSourceRequested = false;
         let isModelSelected = false;
         const selectedModels = [];
-        const selectModel = (model) => {
-            selectedModels.length = 0;
-            selectedModels.push(model);
-        };
+        onst selectModel = (model) => {
+    selectedModels.splice(0, selectedModels.length); 
+    selectedModels.push(model); 
+};
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
