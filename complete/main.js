@@ -348,21 +348,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        const deleteModel = () => {
+       const deleteModel = () => {
             if (selectedObject) {
-                // Remove from scene
                 scene.remove(selectedObject);
-
-                // Remove from placedItems array
-                const index = placedItems.indexOf(selectedObject);
-                if (index > -1) {
-                    placedItems.splice(index, 1);
-                }
-
-                // Reset selected object and hide delete button
+                placedItems = placedItems.filter(item => item !== selectedObject);
                 selectedObject = null;
                 deleteButton.style.display = "none";
             }
+        };
 
         const cancelModel = () => {
             confirmButtons.style.display = "none";
