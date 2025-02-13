@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSourceRequested = false;
         let isModelSelected = false;
         const selectedModels = [];
-        onst selectModel = (model) => {
+        const selectModel = (model) => {
     selectedModels.splice(0, selectedModels.length); 
     selectedModels.push(model); 
 };
