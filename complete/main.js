@@ -234,16 +234,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 clickedSubmenu.classList.toggle("open");
             });
         });
-        const showModel = (item) => {
-            if (previewItem) {
-                scene.remove(previewItem);
-            }
-            previewItem = item;
-            scene.add(previewItem);
-            setOpacityForSelected(0.5);
-            confirmButtons.style.display = "flex";
-            isModelSelected = true;
-        };
+       const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+    previewItem = item;
+    scene.add(previewItem);
+    
+    setOpacityForSelected(0.5); 
+
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
+};
         const placeModel = () => {
             if (selectedModels.length > 0 && reticle.visible) {
                 const clonedModels = deepCloneSelectedModels();
