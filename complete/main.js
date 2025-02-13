@@ -2,6 +2,19 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
+
+ const loadedModels = new Map();
+        let placedItems = [];
+        let previewItem = null;
+        let hitTestSource = null;
+        let hitTestSourceRequested = false;
+        let isModelSelected = false;
+        const selectedModels = [];
+        const selectModel = (model) => {
+    selectedModels.splice(0, selectedModels.length); 
+    selectedModels.push(model); 
+};
+
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
