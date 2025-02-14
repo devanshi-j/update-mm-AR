@@ -5,50 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-            background-color: black; /* Added to prevent white edges */
-        }
+      body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    background-color: black;
+}
 
-        .image-container {
-            position: relative;
-            z-index: 1;
-            width: 25%; /* Reduced size for smaller image */
-            max-width: 100px; /* Limited maximum size */
-            padding: 10px;
-        }
+.image-container {
+    position: relative;
+    z-index: 1;
+    width: 25%;
+    max-width: 100px;
+    padding: 10px;
+}
 
-        img {
-            width: 100%;
-            height: auto;
-            border-radius: 50%;
-            display: block;
-            transition: transform 0.3s ease;
-        }
+img {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+    display: block;
+    transition: transform 0.3s ease;
+}
 
-        img:hover {
-            transform: scale(1.05);
-        }
+img:hover {
+    transform: scale(1.05);
+}
 
-        .video-background {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 360px; /* Exact Samsung width */
-            height: 740px; /* Exact Samsung height */
-            object-fit: cover;
-            z-index: 0;
-        }
-
+.video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Uncommented this for proper centering */
+    width: 360px;
+    height: 740px;
+    object-fit: cover;
+    z-index: 0;
+    /* Add these properties for smoother video handling */
+    pointer-events: none;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
         /* Media Query specifically for Samsung dimensions */
         @media screen and (max-width: 360px) and (height: 740px) {
             .image-container {
@@ -64,10 +67,9 @@
     </style>
 </head>
 <body>
-    <video autoplay muted loop playsinline class="video-background">
-        <source src="./assets/indexpage.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+   <video class="video-background" autoplay muted playsinline>
+    <source src="your-video-source.mp4" type="video/mp4">
+</video>
     <div class="image-container">
         <a href="./complete/index.html">
             <img src="./assets/logo.png" alt="Click to proceed">
