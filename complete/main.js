@@ -128,36 +128,62 @@ document.addEventListener("DOMContentLoaded", () => {
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
-        const onTouchStart = (event) => {
-            event.preventDefault();
-            if (event.touches.length === 1) {
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(touches, camera);
-                const intersects = raycaster.intersectObjects(placedItems, true);
-                if (intersects.length > 0) {
-                    let parent = intersects[0].object;
-                    while (parent.parent && parent.parent !== scene) {
-                        parent = parent.parent;
-                    }
-                    selectedObject = parent;
-                    isRotating = true;
-                    previousTouchX = event.touches[0].pageX;
-                    isScaling = false;
-                    isDragging = false;
-                    deleteButton.style.left = `${event.touches[0].pageX}px`;
-                    deleteButton.style.top = `${event.touches[0].pageY}px`;
-                    deleteButton.style.display = "block";
-                }
-            } else if (event.touches.length === 2) {
-                isScaling = true;
-                isRotating = false;
-                isDragging = false;
-                const dx = event.touches[0].pageX - event.touches[1].pageX;
-                const dy = event.touches[0].pageY - event.touches[1].pageY;
-                previousPinchDistance = Math.sqrt(dx * dx + dy * dy);
+       const onTouchStart = (event) => {
+    event.preventDefault();
+    
+    if (event.touches.length === 1) {
+        // Calculate touch coordinates
+        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+        
+        // Update raycaster
+        raycaster.setFromCamera(touches, camera);
+        
+        // Check for intersections with placed items
+        const intersects = raycaster.intersectObjects(placedItems, true);
+        
+        if (intersects.length > 0) {
+            // Find the root parent object
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
             }
-        };
+            
+            // Set the selected object
+            selectedObject = parent;
+            isRotating = true;
+            previousTouchX = event.touches[0].pageX;
+            isScaling = false;
+            isDragging = false;
+            
+            // Position and show delete button near touch point
+            deleteButton.style.left = `${event.touches[0].pageX - 40}px`; // Offset by half button width
+            deleteButton.style.top = `${event.touches[0].pageY - 60}px`; // Position above touch point
+            deleteButton.style.display = "block";
+            
+        } else {
+            // If we didn't hit any object, hide delete button
+            selectedObject = null;
+            deleteButton.style.display = "none";
+        }
+    }
+};
+
+// Update the onTouchEnd function to handle delete button visibility
+const onTouchEnd = (event) => {
+    if (event.touches.length === 0) {
+        isRotating = false;
+        isDragging = false;
+        isScaling = false;
+        
+        // Don't hide delete button immediately on touch end
+        // Only hide it if we're not selecting an object
+        if (!selectedObject) {
+            deleteButton.style.display = "none";
+        }
+    }
+};
+
         const onTouchMove = (event) => {
             event.preventDefault();
             if (isRotating && event.touches.length === 1 && selectedObject) {
@@ -185,29 +211,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 previousPinchDistance = currentPinchDistance;
             }
         };
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
-                isRotating = false;
-                isDragging = false;
-                isScaling = false;
-                if (!selectedObject) {
-                    deleteButton.style.display = "none";
-                }
-                selectedObject = null;
-            }
-        };
-        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
-        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
-        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
-        const menuButton = document.getElementById("menu-button");
-        const closeButton = document.getElementById("close-button");
-        const sidebarMenu = document.getElementById("sidebar-menu");
-        const confirmButtons = document.getElementById("confirm-buttons");
-       const placeButton = document.getElementById("place");
-       const cancelButton = document.getElementById("cancel");
-       const deleteButton = document.getElementById("delete-button");
-        const surfaceIndicator = document.getElementById("surface-indicator");
-        const statusMessage = document.getElementById("status-message");
+        
+       renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+       renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+       renderer.domElement.addEventListener('touchend', onTouchEnd, false);
+        
+     
+     const menuButton = document.getElementById("menu-button");
+     const closeButton = document.getElementById("close-button");
+     const sidebarMenu = document.getElementById("sidebar-menu");
+     const confirmButtons = document.getElementById("confirm-buttons");
+     const placeButton = document.getElementById("place");
+     const cancelButton = document.getElementById("cancel");
+     const deleteButton = document.getElementById("delete-button");
+     const surfaceIndicator = document.getElementById("surface-indicator");
+     const statusMessage = document.getElementById("status-message");
+
+     
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -259,15 +279,23 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmButtons.style.display = "flex";
     isModelSelected = true;
 };
-       // Updated place model function
+      const deleteModel = () => {
+    if (selectedObject) {
+        scene.remove(selectedObject);
+        placedItems = placedItems.filter(item => item !== selectedObject);
+        selectedObject = null;
+        deleteButton.style.display = "none";
+    }
+};
+
+// Make sure we hide delete button when placing new objects
 const placeModel = () => {
-    if (previewItem && reticle.visible) {  // Changed condition to check previewItem
+    if (previewItem && reticle.visible) {
         const position = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
         const scale = new THREE.Vector3();
         reticle.matrix.decompose(position, rotation, scale);
         
-        // Clone the preview item instead of using selectedModels
         const placedModel = previewItem.clone(true);
         placedModel.position.copy(position);
         placedModel.quaternion.copy(rotation);
@@ -284,24 +312,16 @@ const placeModel = () => {
         scene.add(placedModel);
         placedItems.push(placedModel);
         
-        // Clean up preview
+        // Clean up preview and hide delete button
         scene.remove(previewItem);
         previewItem = null;
         isModelSelected = false;
         reticle.visible = false;
         confirmButtons.style.display = "none";
-    }
-};
-
-// Updated delete model function
-const deleteModel = () => {
-    if (selectedObject) {  // Changed to use selectedObject instead of selectedModels
-        scene.remove(selectedObject);
-        placedItems = placedItems.filter(item => item !== selectedObject);
-        selectedObject = null;
         deleteButton.style.display = "none";
     }
 };
+
         const cancelModel = () => {
             if (previewItem) {
                 scene.remove(previewItem);
@@ -314,7 +334,7 @@ const deleteModel = () => {
         
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
-        deleteButton.addEventListener("click", deleteModel);
+       deleteButton.addEventListener("click", deleteModel);
 
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
