@@ -135,11 +135,19 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let isModelSelected = false;
-        const selectedModels = [];
-        const selectModel = (model) => {
-    selectedModels.splice(0, selectedModels.length); 
-    selectedModels.push(model); 
+        let selectedModels = [];
+
+
+     const selectModel = (model) => {
+    if (!selectedModels.includes(model)) {
+        selectedModels.push(model);
+        console.log("Model added to selectedModels:", model);
+    } else {
+        console.warn("Model is already in selectedModels:", model);
+    }
+    console.log("Updated selectedModels:", selectedModels);
 };
+
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
@@ -288,18 +296,19 @@ const onTouchEnd = (event) => {
     if (previewItem) {
         scene.remove(previewItem);
     }
-    
-    selectModel(item);  
+
+    selectModel(item); 
     console.log("showModel() called. Selected models:", selectedModels);
     
     previewItem = item;
     scene.add(previewItem);
     
-    setOpacityForSelected(0.5); 
+    setOpacityForSelected(0.5);  
 
     confirmButtons.style.display = "flex";
     isModelSelected = true;
 };
+
 
       const deleteModel = () => {
     if (selectedObject) {
@@ -312,43 +321,60 @@ const onTouchEnd = (event) => {
 
 // Make sure we hide delete button when placing new objects
 const placeModel = () => {
-    if (previewItem && reticle.visible) {
-        console.log("placeModel() called. Cloning selected models...");
+    console.log("placeModel() called. Current selectedModels:", selectedModels);
 
-        const clonedModels = deepCloneSelectedModels();
-        console.log("Cloned models:", clonedModels);
+    if (selectedModels.length === 0) {
+        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
+        return;
+    }
 
-        if (clonedModels.length === 0) {
-            console.warn("placeModel() - No models to place!");
-            return;
-        }
+    if (!previewItem || !reticle.visible) {
+        console.warn("placeModel() - No preview item or reticle is not visible.");
+        return;
+    }
 
-        const position = new THREE.Vector3();
-        const rotation = new THREE.Quaternion();
-        reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+    console.log("Cloning selected models...");
+    const clonedModels = deepCloneSelectedModels();
 
-        clonedModels.forEach((model) => {
-            model.position.copy(position);
-            model.quaternion.copy(rotation);
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = child.material.clone();
-                    child.material.transparent = false;
-                    child.material.opacity = 1.0;
-                }
-            });
-            scene.add(model);
-            placedItems.push(model);
+    if (clonedModels.length === 0) {
+        console.warn("placeModel() - No models to place after cloning!");
+        return;
+    }
+
+    // Get reticle position & rotation
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+
+    // Place each cloned model at the reticle's position
+    clonedModels.forEach((model) => {
+        model.position.copy(position);
+        model.quaternion.copy(rotation);
+
+        // Ensure material is fully opaque
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
+            }
         });
 
-        scene.remove(previewItem);
-        previewItem = null;
-        isModelSelected = false;
-        reticle.visible = false;
-        confirmButtons.style.display = "none";
-        deleteButton.style.display = "none";
-    }
+        scene.add(model);
+        placedItems.push(model);
+    });
+
+    // Cleanup after placement
+    scene.remove(previewItem);
+    previewItem = null;
+    isModelSelected = false;
+    reticle.visible = false;
+    confirmButtons.style.display = "none";
+    deleteButton.style.display = "none";
+
+    console.log("Models placed successfully.");
 };
+
 
         const cancelModel = () => {
             if (previewItem) {
