@@ -2,6 +2,24 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
+  const loadedModels = new Map();
+        let placedItems = [];
+        let previewItem = null;
+        let hitTestSource = null;
+        let hitTestSourceRequested = false;
+        let isModelSelected = false;
+        let selectedModels = [];
+
+
+     const selectModel = (model) => {
+    if (!selectedModels.includes(model)) {
+        selectedModels.push(model);
+        console.log("Model added to selectedModels:", model);
+    } else {
+        console.warn("Model is already in selectedModels:", model);
+    }
+    console.log("Updated selectedModels:", selectedModels);
+};
 
  const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
@@ -117,25 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.visible = false;
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
-        const loadedModels = new Map();
-        let placedItems = [];
-        let previewItem = null;
-        let hitTestSource = null;
-        let hitTestSourceRequested = false;
-        let isModelSelected = false;
-        let selectedModels = [];
-
-
-     const selectModel = (model) => {
-    if (!selectedModels.includes(model)) {
-        selectedModels.push(model);
-        console.log("Model added to selectedModels:", model);
-    } else {
-        console.warn("Model is already in selectedModels:", model);
-    }
-    console.log("Updated selectedModels:", selectedModels);
-};
-
+      
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
