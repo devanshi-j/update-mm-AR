@@ -25,9 +25,17 @@ const normalizeModel = (obj, height) => {
 };
 
 const setOpacityForSelected = (opacity) => {
+    console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
+
+    if (selectedModels.length === 0) {
+        console.warn("setOpacityForSelected() - No models in selectedModels array!");
+        return;
+    }
+
     selectedModels.forEach((model) => {
         model.traverse((child) => {
             if (child.isMesh) {
+                child.material = child.material.clone(); 
                 child.material.transparent = true;
                 child.material.opacity = opacity;
             }
@@ -35,7 +43,15 @@ const setOpacityForSelected = (opacity) => {
     });
 };
 
+
 const deepCloneSelectedModels = () => {
+    console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
+
+    if (selectedModels.length === 0) {
+        console.warn("deepCloneSelectedModels() - No models in selectedModels!");
+        return [];
+    }
+
     return selectedModels.map((model) => {
         const clone = model.clone(true);
         clone.traverse((child) => {
@@ -46,6 +62,7 @@ const deepCloneSelectedModels = () => {
         return clone;
     });
 };
+
 
 const itemCategories = {
     table: [
@@ -271,6 +288,10 @@ const onTouchEnd = (event) => {
     if (previewItem) {
         scene.remove(previewItem);
     }
+    
+    selectModel(item);  
+    console.log("showModel() called. Selected models:", selectedModels);
+    
     previewItem = item;
     scene.add(previewItem);
     
@@ -279,6 +300,7 @@ const onTouchEnd = (event) => {
     confirmButtons.style.display = "flex";
     isModelSelected = true;
 };
+
       const deleteModel = () => {
     if (selectedObject) {
         scene.remove(selectedObject);
@@ -291,28 +313,34 @@ const onTouchEnd = (event) => {
 // Make sure we hide delete button when placing new objects
 const placeModel = () => {
     if (previewItem && reticle.visible) {
+        console.log("placeModel() called. Cloning selected models...");
+
+        const clonedModels = deepCloneSelectedModels();
+        console.log("Cloned models:", clonedModels);
+
+        if (clonedModels.length === 0) {
+            console.warn("placeModel() - No models to place!");
+            return;
+        }
+
         const position = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
-        const scale = new THREE.Vector3();
-        reticle.matrix.decompose(position, rotation, scale);
-        
-        const placedModel = previewItem.clone(true);
-        placedModel.position.copy(position);
-        placedModel.quaternion.copy(rotation);
-        
-        // Make sure the placed model is fully opaque
-        placedModel.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.transparent = false;
-                child.material.opacity = 1.0;
-            }
+        reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+
+        clonedModels.forEach((model) => {
+            model.position.copy(position);
+            model.quaternion.copy(rotation);
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = child.material.clone();
+                    child.material.transparent = false;
+                    child.material.opacity = 1.0;
+                }
+            });
+            scene.add(model);
+            placedItems.push(model);
         });
-        
-        scene.add(placedModel);
-        placedItems.push(placedModel);
-        
-        // Clean up preview and hide delete button
+
         scene.remove(previewItem);
         previewItem = null;
         isModelSelected = false;
