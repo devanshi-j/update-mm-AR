@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmButtons.style.display = "flex";
     isModelSelected = true;
 };
-       / Updated place model function
+       // Updated place model function
 const placeModel = () => {
     if (previewItem && reticle.visible) {  // Changed condition to check previewItem
         const position = new THREE.Vector3();
