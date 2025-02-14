@@ -6,74 +6,81 @@
     <title>Document</title>
     <style>
       body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    width: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    position: relative;
-    background-color: black;
-}
-
-.image-container {
-    position: relative;
-    z-index: 1;
-    width: 25%;
-    max-width: 100px;
-    padding: 10px;
-}
-
-img {
-    width: 100%;
-    height: auto;
-    border-radius: 50%;
-    display: block;
-    transition: transform 0.3s ease;
-}
-
-img:hover {
-    transform: scale(1.05);
-}
-
-.video-background {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Uncommented this for proper centering */
-    width: 360px;
-    height: 740px;
-    object-fit: cover;
-    z-index: 0;
-    /* Add these properties for smoother video handling */
-    pointer-events: none;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-}
-        /* Media Query specifically for Samsung dimensions */
-        @media screen and (max-width: 360px) and (height: 740px) {
-            .image-container {
-                width: 20%;
-                padding: 5px;
-            }
-            
-            .video-background {
-                width: 100%;
-                height: 100%;
-            }
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        background-color: black;
+      }
+      .image-container {
+        position: relative;
+        z-index: 1;
+        width: 25%;
+        max-width: 100px;
+        padding: 10px;
+      }
+      img {
+        width: 100%;
+        height: auto;
+        border-radius: 50%;
+        display: block;
+        transition: transform 0.3s ease;
+      }
+      img:hover {
+        transform: scale(1.05);
+      }
+      .video-background {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 360px;
+        height: 740px;
+        object-fit: cover;
+        z-index: 0;
+        pointer-events: none;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      @media screen and (max-width: 360px) and (height: 740px) {
+        .image-container {
+            width: 20%;
+            padding: 5px;
         }
+        
+        .video-background {
+            width: 100%;
+            height: 100%;
+        }
+      }
     </style>
 </head>
 <body>
-   <video class="video-background" autoplay muted playsinline>
-    <source src="your-video-source.mp4" type="video/mp4">
-</video>
+    <video id="myVideo" class="video-background" autoplay muted playsinline>
+        <source src="your-video-source.mp4" type="video/mp4">
+    </video>
     <div class="image-container">
         <a href="./complete/index.html">
             <img src="./assets/logo.png" alt="Click to proceed">
         </a>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('myVideo');
+            
+            // When the video ends, pause it
+            video.addEventListener('ended', function() {
+                video.pause();
+                // Optional: if you want to make sure it stays on the last frame
+                video.currentTime = video.duration;
+            });
+        });
+    </script>
 </body>
 </html>
