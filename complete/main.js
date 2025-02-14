@@ -30,13 +30,18 @@ import { ARButton } from "../libs/jsm/ARButton.js";
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
-const setOpacityForSelected = (opacity) => {
-    console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
+selectedModels.forEach((model) => {
+    model.traverse((child) => {
+        if (child.isMesh) {
+            console.log(`Before: Transparent=${child.material.transparent}, Opacity=${child.material.opacity}`);
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+            console.log(`After: Transparent=${child.material.transparent}, Opacity=${child.material.opacity}`);
+        }
+    });
+});
 
-    if (selectedModels.length === 0) {
-        console.warn("setOpacityForSelected() - No models in selectedModels array!");
-        return;
-    }
 
     selectedModels.forEach((model) => {
         model.traverse((child) => {
