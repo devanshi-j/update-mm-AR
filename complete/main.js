@@ -43,17 +43,6 @@ selectedModels.forEach((model) => {
 });
 
 
-    selectedModels.forEach((model) => {
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone(); 
-                child.material.transparent = true;
-                child.material.opacity = opacity;
-            }
-        });
-    });
-};
-
 
 const deepCloneSelectedModels = () => {
     console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
