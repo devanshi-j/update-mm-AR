@@ -38,19 +38,18 @@ const setOpacityForSelected = (opacity) => {
         console.warn("setOpacityForSelected() - No models in selectedModels array!");
         return;
     }
-selectedModels.forEach((model) => {
-    model.traverse((child) => {
-        if (child.isMesh) {
-            console.log(`Before: Transparent=${child.material.transparent}, Opacity=${child.material.opacity}`);
-           // child.material = child.material.clone();
-             child.material.format = THREE.RGBAFormat; // required for opacity
-            child.material.transparent = true;
-            child.material.opacity = 0.5;
-        
-            console.log(`After: Transparent=${child.material.transparent}, Opacity=${child.material.opacity}`);
-        }
+
+    selectedModels.forEach((model) => {
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = true;
+                child.material.format = THREE.RGBAFormat; // required for opacity
+                child.material.opacity = opacity;
+            }
+        });
     });
-});
+};
 
 
 
