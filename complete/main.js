@@ -203,9 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const closeButton = document.getElementById("close-button");
         const sidebarMenu = document.getElementById("sidebar-menu");
         const confirmButtons = document.getElementById("confirm-buttons");
-        const placeButton = document.getElementById("place");
-        const cancelButton = document.getElementById("cancel");
-        const deleteButton = document.getElementById("delete-button");
+       const placeButton = document.getElementById("place");
+       const cancelButton = document.getElementById("cancel");
+       const deleteButton = document.getElementById("delete-button");
         const surfaceIndicator = document.getElementById("surface-indicator");
         const statusMessage = document.getElementById("status-message");
         document.addEventListener("click", (event) => {
@@ -259,25 +259,49 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmButtons.style.display = "flex";
     isModelSelected = true;
 };
-        const placeModel = () => {
-            if (selectedModels.length > 0 && reticle.visible) {
-                const clonedModels = deepCloneSelectedModels();
-                const position = new THREE.Vector3();
-                const rotation = new THREE.Quaternion();
-                const scale = new THREE.Vector3();
-                reticle.matrix.decompose(position, rotation, scale);
-                clonedModels.forEach((clone) => {
-                    clone.position.copy(position);
-                    clone.quaternion.copy(rotation);
-                    scene.add(clone);
-                    placedItems.push(clone);
-                });
-                selectedModels.length = 0;
-                isModelSelected = false;
-                reticle.visible = false;
-                confirmButtons.style.display = "none";
+       / Updated place model function
+const placeModel = () => {
+    if (previewItem && reticle.visible) {  // Changed condition to check previewItem
+        const position = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        reticle.matrix.decompose(position, rotation, scale);
+        
+        // Clone the preview item instead of using selectedModels
+        const placedModel = previewItem.clone(true);
+        placedModel.position.copy(position);
+        placedModel.quaternion.copy(rotation);
+        
+        // Make sure the placed model is fully opaque
+        placedModel.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
             }
-        };
+        });
+        
+        scene.add(placedModel);
+        placedItems.push(placedModel);
+        
+        // Clean up preview
+        scene.remove(previewItem);
+        previewItem = null;
+        isModelSelected = false;
+        reticle.visible = false;
+        confirmButtons.style.display = "none";
+    }
+};
+
+// Updated delete model function
+const deleteModel = () => {
+    if (selectedObject) {  // Changed to use selectedObject instead of selectedModels
+        scene.remove(selectedObject);
+        placedItems = placedItems.filter(item => item !== selectedObject);
+        selectedObject = null;
+        deleteButton.style.display = "none";
+    }
+};
         const cancelModel = () => {
             if (previewItem) {
                 scene.remove(previewItem);
@@ -287,19 +311,11 @@ document.addEventListener("DOMContentLoaded", () => {
             reticle.visible = false;
             confirmButtons.style.display = "none";
         };
-        const deleteModel = () => {
-            if (selectedModels.length > 0) {
-                selectedModels.forEach((model) => {
-                    scene.remove(model);
-                    placedItems = placedItems.filter(item => item !== model);
-                });
-                selectedModels.length = 0;
-                deleteButton.style.display = "none";
-            }
-        };
+        
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
         deleteButton.addEventListener("click", deleteModel);
+
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
                 const itemName = `${category}${i}`;
