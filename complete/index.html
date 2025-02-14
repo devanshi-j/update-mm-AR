@@ -136,7 +136,7 @@
             transform: scale(1.05);
         }
 
-        #place, #cancel, #delete-button {
+        #place, #cancel{
             font-size: 14px; /* Reduced from 18px */
             padding: 8px 16px; /* Reduced from 12px 24px */
             cursor: pointer;
@@ -148,6 +148,23 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
+         #delete-button {
+        position: fixed;
+        display: none; /* Hidden by default */
+        background-color: #dc3545;
+        color: white;
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        min-width: 80px;
+        font-weight: bold;
+        text-transform: uppercase;
+        z-index: 1000;
+    }
 
         #confirm-buttons {
             position: fixed;
@@ -184,14 +201,16 @@
                 transform: scale(1.05);
             }
 
-        #delete-button {
-            background-color: #28a745;
-            color: white;
-        }
+        #delete-button:hover {
+        background-color: #c82333;
+        transform: scale(1.05);
+    }
 
-            #place:hover {
-                background-color: #218838;
-                transform: scale(1.05);
+        #delete-button {
+        background-color: #dc3545; /* Red color for delete */
+    }
+
+       
             }
         .button-shadow {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -303,11 +322,11 @@
 
     <!-- Confirm Buttons -->
     <div id="confirm-buttons">
-        <button id="place" class="button-shadow">Place</button>
-        <button id="cancel" class="button-shadow">Cancel</button>
-      <button id="delete-button" class="button-shadow">Delete</button>
+    <button id="place" class="button-shadow">Place</button>
+    <button id="cancel" class="button-shadow">Cancel</button>
+</div>
 
-    </div>
+<button id="delete-button" class="button-shadow">Delete</button>
 
     <!-- Import our JS module -->
     <script type="module" src="../complete/main.js"></script>
