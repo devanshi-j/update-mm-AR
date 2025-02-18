@@ -288,8 +288,9 @@
 
     <button id="delete-button" class="button-shadow">Delete</button>
 
-    <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
+    <script>
+        // This script runs before main.js to set up the UI interactions
+        function setupUIInteractions() {
             // Enable touch scrolling for submenus
             const submenus = document.querySelectorAll('.submenu');
             submenus.forEach(submenu => {
@@ -325,7 +326,12 @@
             const categoryIcons = document.querySelectorAll('.icon');
             
             categoryIcons.forEach(icon => {
-                icon.addEventListener('click', () => {
+                icon.addEventListener('click', (e) => {
+                    // Only handle click on the icon or span, not the submenu itself
+                    if (e.target.closest('.submenu')) {
+                        return;
+                    }
+                    
                     const submenu = icon.querySelector('.submenu');
                     
                     // Close all other submenus
@@ -354,7 +360,9 @@
             const confirmButtons = document.getElementById('confirm-buttons');
             
             itemImages.forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent click from bubbling to parent icon
+                    
                     // Deselect all items
                     itemImages.forEach(img => img.classList.remove('selected'));
                     
@@ -376,9 +384,14 @@
                 // Hide confirm buttons
                 confirmButtons.style.display = 'none';
             });
-            
-            // Place and Delete button logic would connect to the AR functionality in main.js
-        });
+        }
+
+        // Execute setup when DOM is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupUIInteractions);
+        } else {
+            setupUIInteractions();
+        }
     </script>
     
     <script type="module" src="../complete/main.js"></script>
