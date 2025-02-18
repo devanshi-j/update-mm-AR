@@ -34,24 +34,6 @@
             backdrop-filter: blur(4px);
         }
 
-        #close-button {
-            font-size: 24px;
-            cursor: pointer;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            color: #FFF44F;
-            width: 40px;
-            height: 40px;
-            border: none;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-        }
-
-        /* Bottom bar menu */
         #bottom-menu {
             position: fixed;
             bottom: 0;
@@ -62,7 +44,6 @@
             height: 120px;
             display: flex;
             overflow-x: auto;
-            overflow-y: hidden;
             padding: 10px 0;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
@@ -93,8 +74,6 @@
             width: 60px;
             height: 60px;
             border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.1);
-            transition: transform 0.2s ease;
             object-fit: cover;
         }
 
@@ -103,17 +82,6 @@
             box-shadow: 0 0 8px rgba(255, 244, 79, 0.5);
         }
 
-        .category-item img:hover {
-            transform: scale(1.1);
-        }
-
-        .category-item span {
-            margin-top: 5px;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        /* Submenu container */
         #submenu-container {
             position: fixed;
             bottom: 120px;
@@ -122,10 +90,6 @@
             background-color: rgba(17, 17, 17, 0.95);
             display: none;
             flex-direction: column;
-            max-height: 50vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            transition: all 0.3s ease;
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
             padding: 10px 0;
         }
@@ -135,19 +99,14 @@
         }
 
         .submenu-content {
-            width: 100%;
-            /* Adding this to ensure content takes up proper space */
-            flex: 1;
             display: none;
         }
 
         .submenu-row {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: center;
+            gap: 15px;
             padding: 10px;
-            /* Adding this to help with content flow */
-            width: 100%;
         }
 
         .item-image {
@@ -156,8 +115,6 @@
             cursor: pointer;
             border: 2px solid transparent;
             border-radius: 8px;
-            transition: all 0.2s ease;
-            margin: 10px;
             object-fit: cover;
             background-color: rgba(255, 255, 255, 0.05);
         }
@@ -165,114 +122,6 @@
         .item-image.selected {
             border: 2px solid #007bff;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        }
-
-        .item-image:hover {
-            border-color: #FFF44F;
-            transform: scale(1.05);
-        }
-
-        #place, #cancel {
-            font-size: 14px;
-            padding: 8px 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            margin: 0 8px;
-            min-width: 80px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        #delete-button {
-            position: fixed;
-            display: none;
-            z-index: 1000;
-            background-color: #dc3545;
-            color: white;
-            font-size: 14px;
-            padding: 8px 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            min-width: 80px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        #confirm-buttons {
-            position: fixed;
-            bottom: 130px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 300;
-            display: none;
-            gap: 12px;
-            justify-content: center;
-            padding: 10px 15px;
-            background-color: rgba(0, 0, 0, 0.8);
-            border-radius: 8px;
-            backdrop-filter: blur(8px);
-        }
-
-        #place {
-            background-color: #28a745;
-            color: white;
-        }
-
-        #place:hover {
-            background-color: #218838;
-            transform: scale(1.05);
-        }
-
-        #cancel {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #cancel:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-
-        #delete-button:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-
-        #delete-button {
-            background-color: #dc3545;
-        }
-
-        .button-shadow {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .loading {
-            position: relative;
-            opacity: 0.5;
-        }
-
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid #FFF44F;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: loading 0.8s linear infinite;
-        }
-
-        @keyframes loading {
-            to {
-                transform: rotate(360deg);
-            }
         }
 
         #reticle {
@@ -287,65 +136,13 @@
             pointer-events: none;
             display: none;
         }
-
-        #surface-indicator {
-            position: fixed;
-            bottom: 130px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: none;
-        }
-
-        #status-message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: none;
-            z-index: 1000;
-        }
-
-        /* Custom scrollbar style */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
     </style>
 </head>
 <body>
-    <!-- Menu Buttons -->
-    <button id="menu-button" class="button-shadow">&equiv;</button>
+    <button id="menu-button">&equiv;</button>
 
-    <!-- AR Elements -->
     <div id="reticle"></div>
-    <div id="surface-indicator">Looking for surface...</div>
-    <div id="status-message"></div>
 
-    <!-- Bottom Menu Bar with Categories -->
     <div id="bottom-menu">
         <div class="category-item" data-category="table">
             <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
@@ -361,190 +158,67 @@
         </div>
     </div>
 
-    <!-- Submenu Container for Furniture Items -->
     <div id="submenu-container">
-        <!-- Table Submenu -->
         <div class="submenu-content" id="table-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-                <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-                <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
-                 </div>
+                <img class="item-image" id="table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" id="table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" id="table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                 <img class="item-image" id="table4" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" id="table5" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" id="table6" src="../assets/models/table/table3/thumbnail.png" alt="Table 3"> 
+                <img class="item-image" id="table7" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" id="table8" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" id="table9" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+            </div>
         </div>
-        
-        <!-- Chair Submenu -->
+
         <div class="submenu-content" id="chair-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-                <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-                <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                <img class="item-image" id="chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" id="chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" id="chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                <img class="item-image" id="chair4" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" id="chair5" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" id="chair6" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                <img class="item-image" id="chair7" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" id="chair8" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" id="chair9" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
             </div>
         </div>
-        
-        <!-- Shelf Submenu -->
+
         <div class="submenu-content" id="shelf-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-                <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-                <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                <img class="item-image" id="shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" id="shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" id="shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                <img class="item-image" id="shelf4" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" id="shelf5" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" id="shelf6" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                <img class="item-image" id="shelf7" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" id="shelf8" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" id="shelf9" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
             </div>
         </div>
     </div>
 
-    <!-- Confirm Buttons -->
-    <div id="confirm-buttons">
-        <button id="place" class="button-shadow">Place</button>
-        <button id="cancel" class="button-shadow">Cancel</button>
-    </div>
-
-    <button id="delete-button" class="button-shadow">Delete</button>
-
-    <!-- Import our JS module -->
-    <script type="module" src="../complete/main.js"></script>
-    
-    <!-- Additional JavaScript for Enhanced UI -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get the menu elements
-            const menuButton = document.getElementById('menu-button');
-            const bottomMenu = document.getElementById('bottom-menu');
-            const categoryItems = document.querySelectorAll('.category-item');
-            const submenuContainer = document.getElementById('submenu-container');
-            const submenuContents = document.querySelectorAll('.submenu-content');
-            
-            // Toggle bottom menu visibility
-            menuButton.addEventListener('click', function() {
-                bottomMenu.classList.toggle('open');
-                
-                // If closing the menu, also close any open submenus
-                if (!bottomMenu.classList.contains('open')) {
-                    submenuContainer.classList.remove('open');
-                    categoryItems.forEach(item => item.classList.remove('active'));
-                }
-            });
-            
-            // Handle category selection
-            categoryItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const category = this.dataset.category;
-                    
-                    // Toggle active state of the clicked category
-                    if (this.classList.contains('active')) {
-                        this.classList.remove('active');
-                        submenuContainer.classList.remove('open');
-                        return;
-                    }
-                    
-                    // Remove active state from all categories
-                    categoryItems.forEach(cat => cat.classList.remove('active'));
-                    
-                    // Add active state to clicked category
-                    this.classList.add('active');
-                    
-                    // Show submenu container
-                    submenuContainer.classList.add('open');
-                    
-                    // Hide all submenu contents
-                    submenuContents.forEach(content => content.style.display = 'none');
-                    
-                    // Show the selected category's submenu
-                    const selectedSubmenu = document.getElementById(`${category}-submenu`);
-                    if (selectedSubmenu) {
-                        selectedSubmenu.style.display = 'block';
-                    }
-                    
-                    // Reset scroll position when switching categories
-                    submenuContainer.scrollTop = 0;
-                });
-            });
-            
-            // Item selection handling
-            const itemImages = document.querySelectorAll('.item-image');
-            
-            itemImages.forEach(item => {
-                item.addEventListener('click', function() {
-                    // Handle item selection
-                    itemImages.forEach(img => img.classList.remove('selected'));
-                    item.classList.add('selected');
-                    
-                    // Additional logic can be added here for item selection
-                });
-            });
+        document.getElementById('menu-button').addEventListener('click', function() {
+            document.getElementById('bottom-menu').classList.toggle('open');
+            document.getElementById('submenu-container').classList.remove('open');
+        });
 
-            // Function to add more items for testing vertical scrolling
-            function addMoreItems() {
-                const submenuRows = document.querySelectorAll('.submenu-row');
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
                 
-                submenuRows.forEach(row => {
-                    // Get the first item as a template
-                    const firstItem = row.querySelector('.item-image');
-                    if (!firstItem) return;
-                    
-                    // Clone and add more items for testing vertical scroll
-                    for (let i = 0; i < 10; i++) {  // Increased to add more items
-                        const clone = firstItem.cloneNode(true);
-                        clone.id = `${clone.id}-clone-${i}`;
-                        row.appendChild(clone);
-                        
-                        // Add click handler to the new item
-                        clone.addEventListener('click', function() {
-                            itemImages.forEach(img => img.classList.remove('selected'));
-                            clone.classList.add('selected');
-                        });
-                    }
-                });
-            }
-            
-            // Uncomment this line to add more items for testing vertical scrolling
-            addMoreItems();
-            
-            // Handle drag scrolling for bottom menu (horizontal)
-            let isDragging = false;
-            let startX = 0;
-            let scrollLeft = 0;
-            
-            bottomMenu.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.pageX - bottomMenu.offsetLeft;
-                scrollLeft = bottomMenu.scrollLeft;
-                bottomMenu.style.cursor = 'grabbing';
+                document.getElementById('submenu-container').classList.add('open');
+                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
+
+                let submenu = document.getElementById(`${this.dataset.category}-submenu`);
+                if (submenu) submenu.style.display = 'block';
             });
-            
-            bottomMenu.addEventListener('mouseleave', () => {
-                isDragging = false;
-                bottomMenu.style.cursor = 'grab';
-            });
-            
-            bottomMenu.addEventListener('mouseup', () => {
-                isDragging = false;
-                bottomMenu.style.cursor = 'grab';
-            });
-            
-            bottomMenu.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.pageX - bottomMenu.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll multiplier
-                bottomMenu.scrollLeft = scrollLeft - walk;
-            });
-            
-            // Touch events for mobile devices
-            bottomMenu.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                startX = e.touches[0].pageX - bottomMenu.offsetLeft;
-                scrollLeft = bottomMenu.scrollLeft;
-            }, { passive: true });
-            
-            bottomMenu.addEventListener('touchend', () => {
-                isDragging = false;
-            }, { passive: true });
-            
-            bottomMenu.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const x = e.touches[0].pageX - bottomMenu.offsetLeft;
-                const walk = (x - startX) * 2;
-                bottomMenu.scrollLeft = scrollLeft - walk;
-            }, { passive: true });
         });
     </script>
 </body>
