@@ -15,31 +15,12 @@
             user-select: none;
         }
 
-        #menu-button {
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #FFF44F;
-            width: 90px;
-            height: 50px;
-            border: none;
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 200;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
-            backdrop-filter: blur(4px);
-        }
-
         #bottom-menu {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(17, 17, 17, 0.95);
+            background-color: rgba(17, 17, 17, 0.3);
             z-index: 100;
             height: 120px;
             display: flex;
@@ -48,12 +29,8 @@
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-        }
-
-        #bottom-menu.open {
-            transform: translateY(0);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
         }
 
         .category-item {
@@ -88,11 +65,13 @@
             left: 0;
             width: 100%;
             height: 40vh;
-            background-color: rgba(17, 17, 17, 0.95);
+            background-color: rgba(17, 17, 17, 0.3);
             display: none;
             flex-direction: column;
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
             overflow-y: auto;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
         }
 
         #submenu-container.open {
@@ -166,8 +145,6 @@
     </style>
 </head>
 <body>
-    <button id="menu-button">&equiv;</button>
-
     <div id="reticle"></div>
 
     <div id="bottom-menu">
@@ -183,27 +160,26 @@
             <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
             <span>Shelves</span>
         </div>
-        
-         <div class="category-item" data-category="lamp">
-            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-            <span>Shelves</span>
+        <div class="category-item" data-category="lamp">
+            <img src="../assets/models/lamp/lamp1/thumbnail.png" alt="Lamps">
+            <span>Lamps</span>
         </div>
-         <div class="category-item" data-category="bed">
-            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-            <span>Shelves</span>
+        <div class="category-item" data-category="bed">
+            <img src="../assets/models/bed/bed1/thumbnail.png" alt="Beds">
+            <span>Beds</span>
         </div>
-         <div class="category-item" data-category="sofa">
-            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-            <span>Shelves</span>
+        <div class="category-item" data-category="sofa">
+            <img src="../assets/models/sofa/sofa1/thumbnail.png" alt="Sofas">
+            <span>Sofas</span>
         </div>
-         <div class="category-item" data-category="cabinet">
-            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-            <span>Shelves</span>
+        <div class="category-item" data-category="cabinet">
+            <img src="../assets/models/cabinet/cabinet1/thumbnail.png" alt="Cabinets">
+            <span>Cabinets</span>
         </div>
     </div>
 
     <div id="submenu-container">
-        <!-- Existing submenus -->
+         <!-- Existing submenus -->
         <div class="submenu-content" id="table-submenu">
             <div class="submenu-row">
                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
@@ -298,11 +274,6 @@
     </div>
 
     <script>
-        document.getElementById('menu-button').addEventListener('click', function() {
-            document.getElementById('bottom-menu').classList.toggle('open');
-            document.getElementById('submenu-container').classList.remove('open');
-        });
-
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', function() {
                 document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
