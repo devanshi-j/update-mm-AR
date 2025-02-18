@@ -74,18 +74,43 @@
             transform: scale(1.1);
         }
 
+        .icon > span {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
         .submenu {
             display: none;
             position: absolute;
-            bottom: 100%;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.9);
             border-radius: 8px;
             padding: 15px;
             z-index: 101;
-            width: auto;
-            white-space: nowrap;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .submenu.open {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .submenu::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .submenu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .submenu::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
         }
 
         .item-image {
@@ -97,7 +122,6 @@
             transition: all 0.2s ease;
             object-fit: cover;
             background-color: rgba(255, 255, 255, 0.05);
-            flex-shrink: 0;
         }
 
         .item-image:hover {
@@ -200,22 +224,58 @@
             <div class="icon" id="table-category">
                 <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
                 <span>Tables</span>
+                <div class="submenu">
+                    <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                    <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                    <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                    <img class="item-image" id="table-table4" src="../assets/models/table/table1/thumbnail.png" alt="Table 4">
+                    <img class="item-image" id="table-table5" src="../assets/models/table/table2/thumbnail.png" alt="Table 5">
+                    <img class="item-image" id="table-table6" src="../assets/models/table/table3/thumbnail.png" alt="Table 6">
+                    <img class="item-image" id="table-table7" src="../assets/models/table/table1/thumbnail.png" alt="Table 7">
+                    <img class="item-image" id="table-table8" src="../assets/models/table/table2/thumbnail.png" alt="Table 8">
+                    <img class="item-image" id="table-table9" src="../assets/models/table/table3/thumbnail.png" alt="Table 9">
+                </div>
             </div>
             <div class="icon" id="chair-category">
                 <img src="../assets/models/chair/chair1/thumbnail.png" alt="Chairs">
                 <span>Chairs</span>
+                <div class="submenu">
+                    <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                    <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                    <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                    <img class="item-image" id="chair-chair4" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 4">
+                    <img class="item-image" id="chair-chair5" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 5">
+                    <img class="item-image" id="chair-chair6" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 6">
+                </div>
             </div>
             <div class="icon" id="shelf-category">
                 <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
                 <span>Shelves</span>
+                <div class="submenu">
+                    <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                    <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                    <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                    <img class="item-image" id="shelf-shelf4" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 4">
+                    <img class="item-image" id="shelf-shelf5" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 5">
+                </div>
             </div>
-             <div class="icon" id="sofa-category">
-                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-                <span>Shelf</span>
+            <div class="icon" id="sofa-category">
+                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofas">
+                <span>Sofas</span>
+                <div class="submenu">
+                    <img class="item-image" id="sofa-sofa1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 1">
+                    <img class="item-image" id="sofa-sofa2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 2">
+                    <img class="item-image" id="sofa-sofa3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 3">
+                </div>
             </div>
-             <div class="icon" id="lamp-category">
-                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-                <span>lamp</span>
+            <div class="icon" id="lamp-category">
+                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamps">
+                <span>Lamps</span>
+                <div class="submenu">
+                    <img class="item-image" id="lamp-lamp1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 1">
+                    <img class="item-image" id="lamp-lamp2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 2">
+                    <img class="item-image" id="lamp-lamp3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 3">
+                </div>
             </div>
         </div>
     </div>
