@@ -92,6 +92,8 @@
             flex-direction: column;
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
             padding: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         #submenu-container.open {
@@ -161,43 +163,31 @@
     <div id="submenu-container">
         <div class="submenu-content" id="table-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-                <img class="item-image" id="table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-                <img class="item-image" id="table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
-                 <img class="item-image" id="table4" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-                <img class="item-image" id="table5" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-                <img class="item-image" id="table6" src="../assets/models/table/table3/thumbnail.png" alt="Table 3"> 
-                <img class="item-image" id="table7" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-                <img class="item-image" id="table8" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-                <img class="item-image" id="table9" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
             </div>
         </div>
 
         <div class="submenu-content" id="chair-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-                <img class="item-image" id="chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-                <img class="item-image" id="chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
-                <img class="item-image" id="chair4" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-                <img class="item-image" id="chair5" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-                <img class="item-image" id="chair6" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
-                <img class="item-image" id="chair7" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-                <img class="item-image" id="chair8" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-                <img class="item-image" id="chair9" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                <img class="item-image" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
             </div>
         </div>
 
         <div class="submenu-content" id="shelf-submenu">
             <div class="submenu-row">
-                <img class="item-image" id="shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-                <img class="item-image" id="shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-                <img class="item-image" id="shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
-                <img class="item-image" id="shelf4" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-                <img class="item-image" id="shelf5" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-                <img class="item-image" id="shelf6" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
-                <img class="item-image" id="shelf7" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-                <img class="item-image" id="shelf8" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-                <img class="item-image" id="shelf9" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
             </div>
         </div>
     </div>
@@ -212,7 +202,7 @@
             item.addEventListener('click', function() {
                 document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
                 this.classList.add('active');
-                
+
                 document.getElementById('submenu-container').classList.add('open');
                 document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
