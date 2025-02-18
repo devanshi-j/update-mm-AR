@@ -134,11 +134,20 @@
             display: flex;
         }
 
+        .submenu-content {
+            width: 100%;
+            /* Adding this to ensure content takes up proper space */
+            flex: 1;
+            display: none;
+        }
+
         .submenu-row {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-around;
             padding: 10px;
-            flex-wrap: wrap;
+            /* Adding this to help with content flow */
+            width: 100%;
         }
 
         .item-image {
@@ -449,6 +458,9 @@
                     if (selectedSubmenu) {
                         selectedSubmenu.style.display = 'block';
                     }
+                    
+                    // Reset scroll position when switching categories
+                    submenuContainer.scrollTop = 0;
                 });
             });
             
@@ -465,7 +477,7 @@
                 });
             });
 
-            // Add more items dynamically for testing vertical scrolling
+            // Function to add more items for testing vertical scrolling
             function addMoreItems() {
                 const submenuRows = document.querySelectorAll('.submenu-row');
                 
@@ -475,7 +487,7 @@
                     if (!firstItem) return;
                     
                     // Clone and add more items for testing vertical scroll
-                    for (let i = 0; i < 6; i++) {
+                    for (let i = 0; i < 10; i++) {  // Increased to add more items
                         const clone = firstItem.cloneNode(true);
                         clone.id = `${clone.id}-clone-${i}`;
                         row.appendChild(clone);
@@ -490,9 +502,9 @@
             }
             
             // Uncomment this line to add more items for testing vertical scrolling
-            // addMoreItems();
+            addMoreItems();
             
-            // Handle drag scrolling
+            // Handle drag scrolling for bottom menu (horizontal)
             let isDragging = false;
             let startX = 0;
             let scrollLeft = 0;
