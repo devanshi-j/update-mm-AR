@@ -9,109 +9,136 @@
             margin: 0;
             font-family: Arial, sans-serif;
             overflow: hidden;
-            touch-action: pan-y; /* Allow vertical scrolling */
+            touch-action: none;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
         }
 
-        #sidebar-menu {
-            width: 100%;
-            height: 100px;
-            background-color: rgba(17, 17, 17, 0.95);
+        #menu-button {
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #FFF44F;
+            width: 90px;
+            height: 50px;
+            border: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 200;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
+
+        #close-button {
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #FFF44F;
+            width: 40px;
+            height: 40px;
+            border: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        /* Bottom bar menu */
+        #bottom-menu {
             position: fixed;
             bottom: 0;
             left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
             z-index: 100;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .categories-container {
+            height: 120px;
             display: flex;
             overflow-x: auto;
-            padding: 15px;
-            gap: 20px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-            height: 70px;
+            overflow-y: hidden;
+            padding: 10px 0;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
         }
 
-        .categories-container::-webkit-scrollbar {
-            height: 6px;
+        #bottom-menu.open {
+            transform: translateY(0);
         }
 
-        .categories-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .categories-container::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .icon {
-            min-width: 80px;
+        .category-item {
+            flex: 0 0 auto;
+            width: 80px;
+            height: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            margin: 0 10px;
             color: white;
             cursor: pointer;
-            position: relative;
+            scroll-snap-align: center;
         }
 
-        .icon > img {
-            width: 50px;
-            height: 50px;
+        .category-item img {
+            width: 60px;
+            height: 60px;
             border-radius: 8px;
             background-color: rgba(255, 255, 255, 0.1);
-            padding: 5px;
             transition: transform 0.2s ease;
+            object-fit: cover;
         }
 
-        .icon > img:hover {
+        .category-item.active img {
+            border: 2px solid #FFF44F;
+            box-shadow: 0 0 8px rgba(255, 244, 79, 0.5);
+        }
+
+        .category-item img:hover {
             transform: scale(1.1);
         }
 
-        .icon > span {
+        .category-item span {
             margin-top: 5px;
             font-size: 12px;
+            text-align: center;
         }
 
-        .submenu {
-            display: none;
-            position: absolute;
+        /* Submenu container */
+        #submenu-container {
+            position: fixed;
             bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.9);
-            border-radius: 8px;
-            padding: 15px;
-            z-index: 101;
-            width: 300px;
-            max-height: 400px;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.95);
+            display: none;
+            flex-direction: column;
+            max-height: 50vh;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+            padding: 10px 0;
         }
 
-        .submenu.open {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+        #submenu-container.open {
+            display: flex;
         }
 
-        .submenu::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .submenu::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .submenu::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+        .submenu-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            flex-wrap: wrap;
         }
 
         .item-image {
@@ -121,13 +148,9 @@
             border: 2px solid transparent;
             border-radius: 8px;
             transition: all 0.2s ease;
+            margin: 10px;
             object-fit: cover;
             background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .item-image:hover {
-            border-color: #FFF44F;
-            transform: scale(1.05);
         }
 
         .item-image.selected {
@@ -135,9 +158,44 @@
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
 
+        .item-image:hover {
+            border-color: #FFF44F;
+            transform: scale(1.05);
+        }
+
+        #place, #cancel {
+            font-size: 14px;
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            margin: 0 8px;
+            min-width: 80px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #delete-button {
+            position: fixed;
+            display: none;
+            z-index: 1000;
+            background-color: #dc3545;
+            color: white;
+            font-size: 14px;
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
         #confirm-buttons {
             position: fixed;
-            bottom: 120px;
+            bottom: 130px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 300;
@@ -150,32 +208,62 @@
             backdrop-filter: blur(8px);
         }
 
-        #place, #cancel, #delete-button {
-            font-size: 14px;
-            padding: 8px 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            min-width: 80px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
         #place {
             background-color: #28a745;
             color: white;
         }
 
-        #cancel, #delete-button {
+        #place:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+
+        #cancel {
             background-color: #dc3545;
             color: white;
         }
 
+        #cancel:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        #delete-button:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
         #delete-button {
-            position: fixed;
-            display: none;
-            z-index: 1000;
+            background-color: #dc3545;
+        }
+
+        .button-shadow {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading {
+            position: relative;
+            opacity: 0.5;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #FFF44F;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: loading 0.8s linear infinite;
+        }
+
+        @keyframes loading {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         #reticle {
@@ -191,96 +279,110 @@
             display: none;
         }
 
-        #surface-indicator, #status-message {
+        #surface-indicator {
             position: fixed;
-            padding: 10px 20px;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
+            padding: 10px 20px;
             border-radius: 20px;
             font-size: 14px;
             display: none;
         }
 
-        #surface-indicator {
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
         #status-message {
+            position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: none;
             z-index: 1000;
+        }
+
+        /* Custom scrollbar style */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
 <body>
+    <!-- Menu Buttons -->
+    <button id="menu-button" class="button-shadow">&equiv;</button>
+
+    <!-- AR Elements -->
     <div id="reticle"></div>
     <div id="surface-indicator">Looking for surface...</div>
     <div id="status-message"></div>
 
-    <div id="sidebar-menu">
-        <div class="categories-container">
-            <div class="icon" id="table-category">
-                <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
-                <span>Tables</span>
-                <div class="submenu">
-                    <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-                    <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-                    <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
-                    <img class="item-image" id="table-table4" src="../assets/models/table/table1/thumbnail.png" alt="Table 4">
-                    <img class="item-image" id="table-table5" src="../assets/models/table/table2/thumbnail.png" alt="Table 5">
-                    <img class="item-image" id="table-table6" src="../assets/models/table/table3/thumbnail.png" alt="Table 6">
-                    <img class="item-image" id="table-table7" src="../assets/models/table/table1/thumbnail.png" alt="Table 7">
-                    <img class="item-image" id="table-table8" src="../assets/models/table/table2/thumbnail.png" alt="Table 8">
-                    <img class="item-image" id="table-table9" src="../assets/models/table/table3/thumbnail.png" alt="Table 9">
-                </div>
+    <!-- Bottom Menu Bar with Categories -->
+    <div id="bottom-menu">
+        <div class="category-item" data-category="table">
+            <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
+            <span>Tables</span>
+        </div>
+        <div class="category-item" data-category="chair">
+            <img src="../assets/models/chair/chair1/thumbnail.png" alt="Chairs">
+            <span>Chairs</span>
+        </div>
+        <div class="category-item" data-category="shelf">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
+            <span>Shelves</span>
+        </div>
+    </div>
+
+    <!-- Submenu Container for Furniture Items -->
+    <div id="submenu-container">
+        <!-- Table Submenu -->
+        <div class="submenu-content" id="table-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
             </div>
-            <div class="icon" id="chair-category">
-                <img src="../assets/models/chair/chair1/thumbnail.png" alt="Chairs">
-                <span>Chairs</span>
-                <div class="submenu">
-                    <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-                    <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-                    <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
-                    <img class="item-image" id="chair-chair4" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 4">
-                    <img class="item-image" id="chair-chair5" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 5">
-                    <img class="item-image" id="chair-chair6" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 6">
-                </div>
+        </div>
+        
+        <!-- Chair Submenu -->
+        <div class="submenu-content" id="chair-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
             </div>
-            <div class="icon" id="shelf-category">
-                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-                <span>Shelves</span>
-                <div class="submenu">
-                    <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-                    <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-                    <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
-                    <img class="item-image" id="shelf-shelf4" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 4">
-                    <img class="item-image" id="shelf-shelf5" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 5">
-                </div>
-            </div>
-            <div class="icon" id="sofa-category">
-                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofas">
-                <span>Sofas</span>
-                <div class="submenu">
-                    <img class="item-image" id="sofa-sofa1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 1">
-                    <img class="item-image" id="sofa-sofa2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 2">
-                    <img class="item-image" id="sofa-sofa3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 3">
-                </div>
-            </div>
-            <div class="icon" id="lamp-category">
-                <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamps">
-                <span>Lamps</span>
-                <div class="submenu">
-                    <img class="item-image" id="lamp-lamp1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 1">
-                    <img class="item-image" id="lamp-lamp2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 2">
-                    <img class="item-image" id="lamp-lamp3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 3">
-                </div>
+        </div>
+        
+        <!-- Shelf Submenu -->
+        <div class="submenu-content" id="shelf-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
             </div>
         </div>
     </div>
 
+    <!-- Confirm Buttons -->
     <div id="confirm-buttons">
         <button id="place" class="button-shadow">Place</button>
         <button id="cancel" class="button-shadow">Cancel</button>
@@ -288,112 +390,150 @@
 
     <button id="delete-button" class="button-shadow">Delete</button>
 
+    <!-- Import our JS module -->
+    <script type="module" src="../complete/main.js"></script>
+    
+    <!-- Additional JavaScript for Enhanced UI -->
     <script>
-        // This script runs before main.js to set up the UI interactions
-        function setupUIInteractions() {
-            // Enable touch scrolling for submenus
-            const submenus = document.querySelectorAll('.submenu');
-            submenus.forEach(submenu => {
-                let touchStartY;
-                let touchStartScrollTop;
-                let isScrolling = false;
-                
-                submenu.addEventListener('touchstart', (e) => {
-                    touchStartY = e.touches[0].clientY;
-                    touchStartScrollTop = submenu.scrollTop;
-                    isScrolling = true;
-                });
-                
-                submenu.addEventListener('touchmove', (e) => {
-                    if (!isScrolling) return;
-                    
-                    const currentY = e.touches[0].clientY;
-                    const deltaY = touchStartY - currentY;
-                    submenu.scrollTop = touchStartScrollTop + deltaY;
-                    
-                    // Prevent default only if substantial scrolling is happening
-                    if (Math.abs(deltaY) > 10) {
-                        e.preventDefault();
-                    }
-                }, { passive: false });
-                
-                submenu.addEventListener('touchend', () => {
-                    isScrolling = false;
-                });
-            });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the menu elements
+            const menuButton = document.getElementById('menu-button');
+            const bottomMenu = document.getElementById('bottom-menu');
+            const categoryItems = document.querySelectorAll('.category-item');
+            const submenuContainer = document.getElementById('submenu-container');
+            const submenuContents = document.querySelectorAll('.submenu-content');
             
-            // Category toggle functionality
-            const categoryIcons = document.querySelectorAll('.icon');
-            
-            categoryIcons.forEach(icon => {
-                icon.addEventListener('click', (e) => {
-                    // Only handle click on the icon or span, not the submenu itself
-                    if (e.target.closest('.submenu')) {
-                        return;
-                    }
-                    
-                    const submenu = icon.querySelector('.submenu');
-                    
-                    // Close all other submenus
-                    document.querySelectorAll('.submenu.open').forEach(menu => {
-                        if (menu !== submenu) {
-                            menu.classList.remove('open');
-                        }
-                    });
-                    
-                    // Toggle current submenu
-                    submenu.classList.toggle('open');
-                });
-            });
-            
-            // Close submenus when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.icon')) {
-                    document.querySelectorAll('.submenu.open').forEach(menu => {
-                        menu.classList.remove('open');
-                    });
+            // Toggle bottom menu visibility
+            menuButton.addEventListener('click', function() {
+                bottomMenu.classList.toggle('open');
+                
+                // If closing the menu, also close any open submenus
+                if (!bottomMenu.classList.contains('open')) {
+                    submenuContainer.classList.remove('open');
+                    categoryItems.forEach(item => item.classList.remove('active'));
                 }
             });
             
-            // Item selection logic
-            const itemImages = document.querySelectorAll('.item-image');
-            const confirmButtons = document.getElementById('confirm-buttons');
-            
-            itemImages.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent click from bubbling to parent icon
+            // Handle category selection
+            categoryItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const category = this.dataset.category;
                     
-                    // Deselect all items
-                    itemImages.forEach(img => img.classList.remove('selected'));
+                    // Toggle active state of the clicked category
+                    if (this.classList.contains('active')) {
+                        this.classList.remove('active');
+                        submenuContainer.classList.remove('open');
+                        return;
+                    }
                     
-                    // Select clicked item
-                    item.classList.add('selected');
+                    // Remove active state from all categories
+                    categoryItems.forEach(cat => cat.classList.remove('active'));
                     
-                    // Show confirm buttons
-                    confirmButtons.style.display = 'flex';
+                    // Add active state to clicked category
+                    this.classList.add('active');
+                    
+                    // Show submenu container
+                    submenuContainer.classList.add('open');
+                    
+                    // Hide all submenu contents
+                    submenuContents.forEach(content => content.style.display = 'none');
+                    
+                    // Show the selected category's submenu
+                    const selectedSubmenu = document.getElementById(`${category}-submenu`);
+                    if (selectedSubmenu) {
+                        selectedSubmenu.style.display = 'block';
+                    }
                 });
             });
             
-            // Cancel button functionality
-            const cancelButton = document.getElementById('cancel');
+            // Item selection handling
+            const itemImages = document.querySelectorAll('.item-image');
             
-            cancelButton.addEventListener('click', () => {
-                // Deselect all items
-                itemImages.forEach(img => img.classList.remove('selected'));
-                
-                // Hide confirm buttons
-                confirmButtons.style.display = 'none';
+            itemImages.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Handle item selection
+                    itemImages.forEach(img => img.classList.remove('selected'));
+                    item.classList.add('selected');
+                    
+                    // Additional logic can be added here for item selection
+                });
             });
-        }
 
-        // Execute setup when DOM is fully loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupUIInteractions);
-        } else {
-            setupUIInteractions();
-        }
+            // Add more items dynamically for testing vertical scrolling
+            function addMoreItems() {
+                const submenuRows = document.querySelectorAll('.submenu-row');
+                
+                submenuRows.forEach(row => {
+                    // Get the first item as a template
+                    const firstItem = row.querySelector('.item-image');
+                    if (!firstItem) return;
+                    
+                    // Clone and add more items for testing vertical scroll
+                    for (let i = 0; i < 6; i++) {
+                        const clone = firstItem.cloneNode(true);
+                        clone.id = `${clone.id}-clone-${i}`;
+                        row.appendChild(clone);
+                        
+                        // Add click handler to the new item
+                        clone.addEventListener('click', function() {
+                            itemImages.forEach(img => img.classList.remove('selected'));
+                            clone.classList.add('selected');
+                        });
+                    }
+                });
+            }
+            
+            // Uncomment this line to add more items for testing vertical scrolling
+            // addMoreItems();
+            
+            // Handle drag scrolling
+            let isDragging = false;
+            let startX = 0;
+            let scrollLeft = 0;
+            
+            bottomMenu.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.pageX - bottomMenu.offsetLeft;
+                scrollLeft = bottomMenu.scrollLeft;
+                bottomMenu.style.cursor = 'grabbing';
+            });
+            
+            bottomMenu.addEventListener('mouseleave', () => {
+                isDragging = false;
+                bottomMenu.style.cursor = 'grab';
+            });
+            
+            bottomMenu.addEventListener('mouseup', () => {
+                isDragging = false;
+                bottomMenu.style.cursor = 'grab';
+            });
+            
+            bottomMenu.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - bottomMenu.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll multiplier
+                bottomMenu.scrollLeft = scrollLeft - walk;
+            });
+            
+            // Touch events for mobile devices
+            bottomMenu.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - bottomMenu.offsetLeft;
+                scrollLeft = bottomMenu.scrollLeft;
+            }, { passive: true });
+            
+            bottomMenu.addEventListener('touchend', () => {
+                isDragging = false;
+            }, { passive: true });
+            
+            bottomMenu.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const x = e.touches[0].pageX - bottomMenu.offsetLeft;
+                const walk = (x - startX) * 2;
+                bottomMenu.scrollLeft = scrollLeft - walk;
+            }, { passive: true });
+        });
     </script>
-    
-    <script type="module" src="../complete/main.js"></script>
 </body>
 </html>
