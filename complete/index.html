@@ -82,37 +82,31 @@
             box-shadow: 0 0 8px rgba(255, 244, 79, 0.5);
         }
 
-        .category-item span {
-            margin-top: 5px;
-            font-size: 12px;
-            text-align: center;
-            color: white;
-        }
-
         #submenu-container {
             position: fixed;
             bottom: 120px;
             left: 0;
             width: 100%;
+            height: 40vh;
             background-color: rgba(17, 17, 17, 0.95);
             display: none;
-            max-height: 50vh; /* Set maximum height to 50% of viewport height */
-            overflow-y: auto; /* Enable vertical scrolling */
+            flex-direction: column;
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
         }
 
         #submenu-container.open {
-            display: block;
+            display: flex;
         }
 
         .submenu-content {
             display: none;
-            padding: 15px;
+            padding: 10px;
         }
 
         .submenu-row {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
             padding: 10px;
             justify-items: center;
@@ -131,7 +125,7 @@
 
         .item-image:hover {
             transform: scale(1.05);
-            border-color: #FFF44F;
+            border-color: rgba(255, 244, 79, 0.3);
         }
 
         .item-image.selected {
@@ -153,21 +147,20 @@
         }
 
         /* Custom scrollbar styling */
-        ::-webkit-scrollbar {
+        #submenu-container::-webkit-scrollbar {
             width: 6px;
         }
 
-        ::-webkit-scrollbar-track {
+        #submenu-container::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
         }
 
-        ::-webkit-scrollbar-thumb {
+        #submenu-container::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 3px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
+        #submenu-container::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.5);
         }
     </style>
@@ -198,12 +191,12 @@
                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
                 <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
                 <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
-                  <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 4">
-                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 5">
-                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 6">
-                  <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 7">
-                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 8">
-                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 9">
+                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                 <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
             </div>
         </div>
 
@@ -228,47 +221,18 @@
         document.getElementById('menu-button').addEventListener('click', function() {
             document.getElementById('bottom-menu').classList.toggle('open');
             document.getElementById('submenu-container').classList.remove('open');
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         });
 
         document.querySelectorAll('.category-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                const wasActive = this.classList.contains('active');
-                
-                // Remove active class from all items
-                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-                
-                // Toggle submenu
-                if (!wasActive) {
-                    this.classList.add('active');
-                    document.getElementById('submenu-container').classList.add('open');
-                    document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
-                    
-                    const submenu = document.getElementById(`${this.dataset.category}-submenu`);
-                    if (submenu) submenu.style.display = 'block';
-                } else {
-                    document.getElementById('submenu-container').classList.remove('open');
-                }
-            });
-        });
-
-        // Close submenu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#submenu-container') && 
-                !e.target.closest('.category-item') && 
-                !e.target.closest('#menu-button')) {
-                document.getElementById('submenu-container').classList.remove('open');
-                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-            }
-        });
-
-        // Handle item selection
-        document.querySelectorAll('.item-image').forEach(item => {
             item.addEventListener('click', function() {
-                document.querySelectorAll('.item-image').forEach(img => img.classList.remove('selected'));
-                this.classList.add('selected');
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
+
+                document.getElementById('submenu-container').classList.add('open');
+                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
+
+                let submenu = document.getElementById(`${this.dataset.category}-submenu`);
+                if (submenu) submenu.style.display = 'block';
             });
         });
     </script>
