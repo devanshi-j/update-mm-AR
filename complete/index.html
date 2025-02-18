@@ -9,7 +9,7 @@
             margin: 0;
             font-family: Arial, sans-serif;
             overflow: hidden;
-            touch-action: none;
+            touch-action: pan-y; /* Allow vertical scrolling */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
@@ -92,6 +92,7 @@
             width: 300px;
             max-height: 400px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
         }
 
         .submenu.open {
@@ -287,6 +288,99 @@
 
     <button id="delete-button" class="button-shadow">Delete</button>
 
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            // Enable touch scrolling for submenus
+            const submenus = document.querySelectorAll('.submenu');
+            submenus.forEach(submenu => {
+                let touchStartY;
+                let touchStartScrollTop;
+                let isScrolling = false;
+                
+                submenu.addEventListener('touchstart', (e) => {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartScrollTop = submenu.scrollTop;
+                    isScrolling = true;
+                });
+                
+                submenu.addEventListener('touchmove', (e) => {
+                    if (!isScrolling) return;
+                    
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = touchStartY - currentY;
+                    submenu.scrollTop = touchStartScrollTop + deltaY;
+                    
+                    // Prevent default only if substantial scrolling is happening
+                    if (Math.abs(deltaY) > 10) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                submenu.addEventListener('touchend', () => {
+                    isScrolling = false;
+                });
+            });
+            
+            // Category toggle functionality
+            const categoryIcons = document.querySelectorAll('.icon');
+            
+            categoryIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const submenu = icon.querySelector('.submenu');
+                    
+                    // Close all other submenus
+                    document.querySelectorAll('.submenu.open').forEach(menu => {
+                        if (menu !== submenu) {
+                            menu.classList.remove('open');
+                        }
+                    });
+                    
+                    // Toggle current submenu
+                    submenu.classList.toggle('open');
+                });
+            });
+            
+            // Close submenus when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.icon')) {
+                    document.querySelectorAll('.submenu.open').forEach(menu => {
+                        menu.classList.remove('open');
+                    });
+                }
+            });
+            
+            // Item selection logic
+            const itemImages = document.querySelectorAll('.item-image');
+            const confirmButtons = document.getElementById('confirm-buttons');
+            
+            itemImages.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Deselect all items
+                    itemImages.forEach(img => img.classList.remove('selected'));
+                    
+                    // Select clicked item
+                    item.classList.add('selected');
+                    
+                    // Show confirm buttons
+                    confirmButtons.style.display = 'flex';
+                });
+            });
+            
+            // Cancel button functionality
+            const cancelButton = document.getElementById('cancel');
+            
+            cancelButton.addEventListener('click', () => {
+                // Deselect all items
+                itemImages.forEach(img => img.classList.remove('selected'));
+                
+                // Hide confirm buttons
+                confirmButtons.style.display = 'none';
+            });
+            
+            // Place and Delete button logic would connect to the AR functionality in main.js
+        });
+    </script>
+    
     <script type="module" src="../complete/main.js"></script>
 </body>
 </html>
