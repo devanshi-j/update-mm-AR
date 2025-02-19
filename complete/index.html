@@ -275,17 +275,30 @@
 
     <script>
         document.querySelectorAll('.category-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
+    item.addEventListener('click', function() {
+        const submenuContainer = document.getElementById('submenu-container');
+        const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
+        const isCurrentlyActive = this.classList.contains('active');
 
-                document.getElementById('submenu-container').classList.add('open');
-                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
+        // Remove active class from all category items
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+        
+        // Hide all submenus
+        document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
-                let submenu = document.getElementById(`${this.dataset.category}-submenu`);
-                if (submenu) submenu.style.display = 'block';
-            });
-        });
+        // If the clicked item wasn't active, show its submenu
+        if (!isCurrentlyActive) {
+            this.classList.add('active');
+            submenuContainer.classList.add('open');
+            if (targetSubmenu) {
+                targetSubmenu.style.display = 'block';
+            }
+        } else {
+            // If it was active, close the submenu container
+            submenuContainer.classList.remove('open');
+        }
+    });
+});
     </script>
 </body>
 </html>
