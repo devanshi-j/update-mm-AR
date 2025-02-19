@@ -181,30 +181,31 @@
                 // Prevent click from bubbling to document
                 e.stopPropagation();
                 
+                // Remove active class from all items
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                
+                // Hide all submenus
+                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Show submenu of clicked item
                 const submenu = this.querySelector('.submenu-content');
-                const isCurrentlyActive = this.classList.contains('active');
-                
-                // First, close all submenus and remove all active states
-                document.querySelectorAll('.category-item').forEach(el => {
-                    el.classList.remove('active');
-                    el.querySelector('.submenu-content').style.display = 'none';
-                });
-                
-                // If clicked item wasn't active, open its submenu
-                if (!isCurrentlyActive) {
-                    this.classList.add('active');
-                    if (submenu) {
-                        submenu.style.display = 'block';
-                    }
+                if (submenu) {
+                    submenu.style.display = 'block';
                 }
-                // If it was active, it's already been closed by the code above
             });
         });
 
-        // Prevent submenu clicks from closing the menu
-        document.querySelectorAll('.submenu-content').forEach(submenu => {
-            submenu.addEventListener('click', function(e) {
+        // Close submenu when clicking on a submenu item
+        document.querySelectorAll('.item-image').forEach(item => {
+            item.addEventListener('click', function(e) {
                 e.stopPropagation();
+                // Hide all submenus
+                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
+                // Remove active class from all category items
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
             });
         });
 
