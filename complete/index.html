@@ -22,7 +22,7 @@
             justify-content: center;
             align-items: center;
             color: #FFF44F;
-            width: 50px;
+            width: 90px;
             height: 50px;
             border: none;
             position: fixed;
@@ -30,14 +30,27 @@
             left: 10px;
             z-index: 200;
             background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
+            border-radius: 8px;
             backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
         }
-        
-        #menu-button.open {
-            transform: rotate(45deg);
+        #close-button {
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #FFF44F;
+            width: 40px;
+            height: 40px;
+            border: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
         }
+       
+
        
         #bottom-menu {
             position: fixed;
@@ -296,237 +309,189 @@
 </head>
 <body>
    
-<!-- Menu Button - Now single button that changes appearance -->
-<button id="menu-button" class="button-shadow">&equiv;</button>
+<!-- Menu Buttons -->
+    <button id="menu-button" class="button-shadow">&equiv;</button>
+    <!-- AR Elements -->
+    <div id="reticle"></div>
+    <div id="surface-indicator">Looking for surface...</div>
+    <div id="status-message"></div>
 
-<!-- AR Elements -->
-<div id="reticle"></div>
-<div id="surface-indicator">Looking for surface...</div>
-<div id="status-message"></div>
-
-<div id="bottom-menu">
-    <div class="category-item" id="table-category" data-category="table">
-        <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
-        <span>Tables</span>
-    </div>
-    <div class="category-item" id="chair-category" data-category="chair">
-        <img src="../assets/models/chair/chair1/thumbnail.png" alt="Chairs">
-        <span>Chairs</span>
-    </div>
-    <div class="category-item" id="shelf-category" data-category="shelf">
-        <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
-        <span>Shelves</span>
-    </div>
-    <div class="category-item" data-category="lamp">
-        <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamps">
-        <span>Lamps</span>
-    </div>
-    <div class="category-item" data-category="bed">
-        <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Beds">
-        <span>Beds</span>
-    </div>
-    <div class="category-item" data-category="sofa">
-        <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofas">
-        <span>Sofas</span>
-    </div>
-    <div class="category-item" data-category="cabinet">
-        <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinets">
-        <span>Cabinets</span>
-    </div>
-</div>
-
-<div id="submenu-container">
-    <!-- No separate close button needed as menu button transforms -->
-    <!-- Table submenu -->
-    <div class="submenu-content" id="table-submenu">
-        <div class="submenu-row">
-            <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
-            <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
-            <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
-            <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 4">
-            <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 5">
-            <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 6">
-            <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 7">
-            <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 8">
-            <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 9">
+    <div id="bottom-menu">
+        <div class="category-item" id="table-category" data-category="table">
+            <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
+            <span>Tables</span>
+        </div>
+        <div class="category-item" id="chair-category" data-category="chair">
+            <img src="../assets/models/chair/chair1/thumbnail.png" alt="Chairs">
+            <span>Chairs</span>
+        </div>
+        <div class="category-item" id="shelf-category" data-category="shelf">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelves">
+            <span>Shelves</span>
+        </div>
+        <div class="category-item" data-category="lamp">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamps">
+            <span>Lamps</span>
+        </div>
+        <div class="category-item" data-category="bed">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Beds">
+            <span>Beds</span>
+        </div>
+        <div class="category-item" data-category="sofa">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofas">
+            <span>Sofas</span>
+        </div>
+        <div class="category-item" data-category="cabinet">
+            <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinets">
+            <span>Cabinets</span>
         </div>
     </div>
-    
-    <!-- Remaining submenus (unchanged) -->
-    <!-- Chair submenu -->
-    <div class="submenu-content" id="chair-submenu">
-        <div class="submenu-row">
-            <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
-            <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
-            <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
-            <img class="item-image" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 4">
-            <img class="item-image" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 5">
-            <img class="item-image" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 6">
-            <img class="item-image" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 7">
-            <img class="item-image" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 8">
-            <img class="item-image" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 9">
+
+    <div id="submenu-container">
+        <button id="close-button">&times;</button>
+        <!-- Table submenu -->
+        <div class="submenu-content" id="table-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="table-table1" src="../assets/models/table/table1/thumbnail.png" alt="Table 1">
+                <img class="item-image" id="table-table2" src="../assets/models/table/table2/thumbnail.png" alt="Table 2">
+                <img class="item-image" id="table-table3" src="../assets/models/table/table3/thumbnail.png" alt="Table 3">
+                <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 4">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 5">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 6">
+                <img class="item-image" src="../assets/models/table/table1/thumbnail.png" alt="Table 7">
+                <img class="item-image" src="../assets/models/table/table2/thumbnail.png" alt="Table 8">
+                <img class="item-image" src="../assets/models/table/table3/thumbnail.png" alt="Table 9">
+            </div>
+        </div>
+        <!-- Chair submenu -->
+        <div class="submenu-content" id="chair-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="chair-chair1" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 1">
+                <img class="item-image" id="chair-chair2" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 2">
+                <img class="item-image" id="chair-chair3" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 3">
+                <img class="item-image" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 4">
+                <img class="item-image" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 5">
+                <img class="item-image" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 6">
+                <img class="item-image" src="../assets/models/chair/chair1/thumbnail.png" alt="Chair 7">
+                <img class="item-image" src="../assets/models/chair/chair2/thumbnail.png" alt="Chair 8">
+                <img class="item-image" src="../assets/models/chair/chair3/thumbnail.png" alt="Chair 9">
+            </div>
+        </div>
+        <!-- Shelf submenu -->
+        <div class="submenu-content" id="shelf-submenu">
+            <div class="submenu-row">
+                <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
+                <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
+                <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 4">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 5">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 6">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 7">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 8">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 9">
+            </div>
+        </div>
+        <!-- Lamp submenu -->
+        <div class="submenu-content" id="lamp-submenu">
+            <div class="submenu-row">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 1">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 2">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 4">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 5">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 6">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 7">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 8">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 9">
+            </div>
+        </div>
+        <!-- Bed submenu -->
+        <div class="submenu-content" id="bed-submenu">
+            <div class="submenu-row">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 1">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 2">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 4">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 5">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 6">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 7">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 8">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 9">
+            </div>
+        </div>
+        <!-- Sofa submenu -->
+        <div class="submenu-content" id="sofa-submenu">
+            <div class="submenu-row">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 1">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 2">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 4">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 5">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 6">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 7">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 8">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 9">
+            </div>
+        </div>
+        <!-- Cabinet submenu -->
+        <div class="submenu-content" id="cabinet-submenu">
+            <div class="submenu-row">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 1">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 2">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 3">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 4">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 5">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 6">
+                <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 7">
+                <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 8">
+                <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 9">
+            </div>
         </div>
     </div>
-    <!-- Shelf submenu -->
-    <div class="submenu-content" id="shelf-submenu">
-        <div class="submenu-row">
-            <img class="item-image" id="shelf-shelf1" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 1">
-            <img class="item-image" id="shelf-shelf2" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 2">
-            <img class="item-image" id="shelf-shelf3" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 3">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 4">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 5">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 6">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Shelf 7">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Shelf 8">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Shelf 9">
-        </div>
+
+    <!-- Confirm Buttons -->
+    <div id="confirm-buttons">
+        <button id="place" class="button-shadow">Place</button>
+        <button id="cancel" class="button-shadow">Cancel</button>
     </div>
-    <!-- Lamp submenu -->
-    <div class="submenu-content" id="lamp-submenu">
-        <div class="submenu-row">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 1">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 2">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 3">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 4">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 5">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 6">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Lamp 7">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Lamp 8">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Lamp 9">
-        </div>
-    </div>
-    <!-- Bed submenu -->
-    <div class="submenu-content" id="bed-submenu">
-        <div class="submenu-row">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 1">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 2">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 3">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 4">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 5">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 6">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Bed 7">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Bed 8">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Bed 9">
-        </div>
-    </div>
-    <!-- Sofa submenu -->
-    <div class="submenu-content" id="sofa-submenu">
-        <div class="submenu-row">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 1">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 2">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 3">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 4">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 5">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 6">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Sofa 7">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Sofa 8">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Sofa 9">
-        </div>
-    </div>
-    <!-- Cabinet submenu -->
-    <div class="submenu-content" id="cabinet-submenu">
-        <div class="submenu-row">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 1">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 2">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 3">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 4">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 5">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 6">
-            <img class="item-image" src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinet 7">
-            <img class="item-image" src="../assets/models/shelf/shelf2/thumbnail.png" alt="Cabinet 8">
-            <img class="item-image" src="../assets/models/shelf/shelf3/thumbnail.png" alt="Cabinet 9">
-        </div>
-    </div>
-</div>
 
-<!-- Confirm Buttons -->
-<div id="confirm-buttons">
-    <button id="place" class="button-shadow">Place</button>
-    <button id="cancel" class="button-shadow">Cancel</button>
-</div>
+    <button id="delete-button" class="button-shadow">Delete</button>
 
-<button id="delete-button" class="button-shadow">Delete</button>
+    <script>
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const submenuContainer = document.getElementById('submenu-container');
+                const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
+                const isCurrentlyActive = this.classList.contains('active');
 
-<script>
-    // Get menu button element
-    const menuButton = document.getElementById('menu-button');
-    const submenuContainer = document.getElementById('submenu-container');
-    
-    // Toggle menu function
-    menuButton.addEventListener('click', function(event) {
-        event.stopPropagation();
-        
-        // Toggle the open class
-        if (submenuContainer.classList.contains('open')) {
-            // Closing the menu
-            submenuContainer.classList.remove('open');
-            menuButton.classList.remove('open');
-            menuButton.innerHTML = '&equiv;'; // Hamburger icon
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-            
-            if (!isModelSelected) {
-                reticle.visible = false;
-            }
-        } else {
-            // Opening the menu
-            submenuContainer.classList.add('open');
-            menuButton.classList.add('open');
-            menuButton.innerHTML = '&times;'; // X icon
-        }
-    });
-    
-    // Handle document clicks to close menu when clicking outside
-    document.addEventListener('click', function(event) {
-        const isClickInsideMenu = submenuContainer?.contains(event.target);
-        const isClickOnMenuButton = menuButton?.contains(event.target);
-        const isMenuOpen = submenuContainer?.classList.contains('open');
-        
-        if (!isClickInsideMenu && !isClickOnMenuButton && isMenuOpen) {
-            submenuContainer.classList.remove('open');
-            menuButton.classList.remove('open');
-            menuButton.innerHTML = '&equiv;'; // Hamburger icon
-            
-            if (!isModelSelected) {
-                reticle.visible = false;
-            }
-        }
-    });
+                // Remove active class from all category items
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                
+                // Hide all submenus
+                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
-    // Category items click handling
-    document.querySelectorAll('.category-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
-            const isCurrentlyActive = this.classList.contains('active');
-
-            // Remove active class from all category items
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-            
-            // Hide all submenus
-            document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
-
-            // If the clicked item wasn't active, show its submenu
-            if (!isCurrentlyActive) {
-                this.classList.add('active');
-                submenuContainer.classList.add('open');
-                menuButton.classList.add('open');
-                menuButton.innerHTML = '&times;'; // X icon
-                if (targetSubmenu) {
-                    targetSubmenu.style.display = 'block';
+                // If the clicked item wasn't active, show its submenu
+                if (!isCurrentlyActive) {
+                    this.classList.add('active');
+                    submenuContainer.classList.add('open');
+                    if (targetSubmenu) {
+                        targetSubmenu.style.display = 'block';
+                    }
+                } else {
+                    // If it was active, close the submenu container
+                    submenuContainer.classList.remove('open');
                 }
-            } else {
-                // If it was active, close the submenu container
-                submenuContainer.classList.remove('open');
-                menuButton.classList.remove('open');
-                menuButton.innerHTML = '&equiv;'; // Hamburger icon
-            }
+            });
         });
-    });
 
-    // Define isModelSelected for script compatibility
-    let isModelSelected = false;
-</script>
+        // Add close button functionality
+        document.getElementById('close-button').addEventListener('click', function() {
+            document.getElementById('submenu-container').classList.remove('open');
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+        });
+    </script>
 
-<!-- Import JS module -->
-<script type="module" src="../complete/main.js"></script>
+    <!-- Import JS module -->
+    <script type="module" src="../complete/main.js"></script>
 </body>
 </html>
