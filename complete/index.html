@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>AR Furniture Viewer</title>
     <style>
-        body {
+         body {
             margin: 0;
             font-family: Arial, sans-serif;
             overflow: hidden;
@@ -15,43 +15,48 @@
             user-select: none;
         }
 
-       #menu-button {
+        #menu-button {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 40px;
+            background-color: #8B7355;
+            border: none;
+            border-radius: 8px;
+            color: white;
             font-size: 24px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #FFF44F;
-            width: 90px;
-            height: 50px;
-            border: none;
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 200;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
-            backdrop-filter: blur(4px);
+            z-index: 101;
+            margin-top: -20px; /* Pull up slightly above the bottom menu */
         }
+
         #close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: transparent;
+            border: none;
+            color: #000;
             font-size: 24px;
             cursor: pointer;
             display: none;
             justify-content: center;
             align-items: center;
-            color: #FFF44F;
-            width: 40px;
-            height: 40px;
-            border: none;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
+            z-index: 1001;
         }
-       
 
-       
+        #close-button::after {
+            content: "×";
+            font-size: 24px;
+            color: #000;
+        }
+
         #bottom-menu {
             position: fixed;
             bottom: 0;
@@ -68,8 +73,27 @@
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
+            position: relative; /* Added for menu button positioning */
         }
 
+        #submenu-container {
+            position: fixed;
+            bottom: 80px;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            background-color: white;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+
+        #submenu-container.open {
+            display: flex;
+        }
         .category-item {
             flex: 0 0 auto;
             width: 80px;
@@ -461,27 +485,31 @@
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', function() {
                 const submenuContainer = document.getElementById('submenu-container');
+                const closeButton = document.getElementById('close-button');
                 const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
                 const isCurrentlyActive = this.classList.contains('active');
 
-                // Remove active class from all category items
                 document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-                
-                // Hide all submenus
                 document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
-                // If the clicked item wasn't active, show its submenu
                 if (!isCurrentlyActive) {
                     this.classList.add('active');
                     submenuContainer.classList.add('open');
+                    closeButton.style.display = 'flex';
                     if (targetSubmenu) {
                         targetSubmenu.style.display = 'block';
                     }
                 } else {
-                    // If it was active, close the submenu container
                     submenuContainer.classList.remove('open');
+                    closeButton.style.display = 'none';
                 }
             });
+        });
+
+        document.getElementById('close-button').addEventListener('click', function() {
+            document.getElementById('submenu-container').classList.remove('open');
+            this.style.display = 'none';
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         });
 
         // Add close button functionality
