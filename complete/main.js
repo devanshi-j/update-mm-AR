@@ -139,12 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
       
-        const getTouchDistance = (touch1, touch2) => {
-            const dx = touch1.pageX - touch2.pageX;
-            const dy = touch1.pageY - touch2.pageY;
-            return Math.sqrt(dx * dx + dy * dy);
-        };
-      
+       const getTouchDistance = (touch1, touch2) => {
+    const dx = touch1.pageX - touch2.pageX;
+    const dy = touch1.pageY - touch2.pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+};
+
 const onTouchStart = (event) => {
     event.preventDefault();
 
@@ -191,12 +191,8 @@ const onTouchStart = (event) => {
     }
 };
 
-// Helper function to calculate distance between two touches
-const getTouchDistance = (touch1, touch2) => {
-    const dx = touch1.pageX - touch2.pageX;
-    const dy = touch1.pageY - touch2.pageY;
-    return Math.sqrt(dx * dx + dy * dy);
-};
+
+
 
 // Update the onTouchEnd function to handle delete button visibility
 const onTouchEnd = (event) => {
