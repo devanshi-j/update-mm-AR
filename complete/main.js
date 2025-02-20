@@ -339,11 +339,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         child.material.transparent = false;
                         child.material.opacity = 1.0;
                     }
-                });
+                });*/
 
                 scene.add(model);
                 placedItems.push(model);
-            });*/
+            });
 
             scene.remove(previewItem);
             previewItem = null;
