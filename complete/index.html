@@ -14,16 +14,15 @@
             -webkit-user-select: none;
             user-select: none;
         }
-
-        #menu-button {
+       #menu-button {
             position: absolute;
             left: 50%;
-            transform: translateX(-50%);
+            top: 50%;
+            transform: translate(-50%, -50%);
             width: 60px;
-            height: 40px;
-            background-color: #8B7355;
+            height: 30px;
+            background: transparent;
             border: none;
-            border-radius: 8px;
             color: white;
             font-size: 24px;
             cursor: pointer;
@@ -31,10 +30,22 @@
             justify-content: center;
             align-items: center;
             z-index: 101;
-            margin-top: -20px; /* Pull up slightly above the bottom menu */
         }
 
-        #close-button {
+        .menu-content {
+            display: flex;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            visibility: hidden;
+        }
+
+        .menu-content.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+         #close-button {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -57,26 +68,28 @@
             color: #000;
         }
 
-        #bottom-menu {
+       #bottom-menu {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(20, 20, 20, 0.6);
+            background-color: #8B7355;
             z-index: 100;
-            height: 80px;
+            height: 40px; /* Start with half height */
             display: flex;
-            overflow-x: auto;
-            padding: 10px 0;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+            overflow: hidden; /* Hide overflow content initially */
+            transition: height 0.3s ease;
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
-            position: relative; /* Added for menu button positioning */
         }
 
-        #submenu-container {
+        #bottom-menu.expanded {
+            height: 80px; /* Full height when expanded */
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+       #submenu-container {
             position: fixed;
             bottom: 80px;
             left: 0;
@@ -333,14 +346,18 @@
 </head>
 <body>
    
-<!-- Menu Buttons -->
+<!-- Menu Buttons 
     <button id="menu-button" class="button-shadow">&equiv;</button>
     <!-- AR Elements -->
     <div id="reticle"></div>
     <div id="surface-indicator">Looking for surface...</div>
     <div id="status-message"></div>
-
+    
     <div id="bottom-menu">
+        <button id="menu-button">&equiv;</button>
+        <div class="menu-content">
+
+   
         <div class="category-item" id="table-category" data-category="table">
             <img src="../assets/models/table/table1/thumbnail.png" alt="Tables">
             <span>Tables</span>
@@ -369,6 +386,7 @@
             <img src="../assets/models/shelf/shelf1/thumbnail.png" alt="Cabinets">
             <span>Cabinets</span>
         </div>
+    </div>
     </div>
 
     <div id="submenu-container">
@@ -482,6 +500,29 @@
     <button id="delete-button" class="button-shadow">Delete</button>
 
     <script>
+       const menuButton = document.getElementById('menu-button');
+        const bottomMenu = document.getElementById('bottom-menu');
+        const menuContent = document.querySelector('.menu-content');
+        let isMenuExpanded = false;
+
+        menuButton.addEventListener('click', () => {
+            isMenuExpanded = !isMenuExpanded;
+            bottomMenu.classList.toggle('expanded');
+            
+            if (isMenuExpanded) {
+                setTimeout(() => {
+                    menuContent.classList.add('visible');
+                }, 100);
+            } else {
+                menuContent.classList.remove('visible');
+                // Close submenu if open
+                document.getElementById('submenu-container').classList.remove('open');
+                document.getElementById('close-button').style.display = 'none';
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+            }
+        });
+
+        // Existing category item click handlers
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', function() {
                 const submenuContainer = document.getElementById('submenu-container');
@@ -509,12 +550,6 @@
         document.getElementById('close-button').addEventListener('click', function() {
             document.getElementById('submenu-container').classList.remove('open');
             this.style.display = 'none';
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-        });
-
-        // Add close button functionality
-        document.getElementById('close-button').addEventListener('click', function() {
-            document.getElementById('submenu-container').classList.remove('open');
             document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         });
     </script>
