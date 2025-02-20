@@ -239,15 +239,15 @@ const onTouchEnd = (event) => {
         renderer.domElement.addEventListener('touchend', onTouchEnd, false);
 
         // UI Elements setup
-        const menuButton = document.getElementById("menu-button");
+        /*const menuButton = document.getElementById("menu-button");
         const closeButton = document.getElementById("close-button");
-        const sidebarMenu = document.getElementById("sidebar-menu");
+        const sidebarMenu = document.getElementById("sidebar-menu");*/
         const confirmButtons = document.getElementById("confirm-buttons");
         const placeButton = document.querySelector("#place");
         const cancelButton = document.querySelector("#cancel");
 
         // Menu event handlers
-        document.addEventListener("click", (event) => {
+       /* document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
             const isMenuOpen = sidebarMenu?.classList.contains("open");
@@ -293,7 +293,7 @@ const onTouchEnd = (event) => {
                 
                 clickedSubmenu.classList.toggle("open");
             });
-        });
+        });*/
 
        const showModel = (item) => {
     if (previewItem) {
