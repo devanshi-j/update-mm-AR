@@ -265,34 +265,7 @@ const onTouchEnd = (event) => {
     }
 };
 
-        const onTouchMove = (event) => {
-            event.preventDefault();
-            if (isRotating && event.touches.length === 1 && selectedObject) {
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotateY(deltaX * 0.005);
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 2 && selectedObject) {
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
-            } else if (isScaling && event.touches.length === 2 && selectedObject) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const scaleFactor = currentPinchDistance / previousPinchDistance;
-                if (scaleFactor !== 1) {
-                    const newScale = selectedObject.scale.x * scaleFactor;
-                    if (newScale >= 0.5 && newScale <= 2) {
-                        selectedObject.scale.multiplyScalar(scaleFactor);
-                    }
-                }
-                previousPinchDistance = currentPinchDistance;
-            }
-        };
-        
+      
        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
