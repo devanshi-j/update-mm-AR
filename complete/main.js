@@ -13,12 +13,23 @@ const normalizeModel = (obj, height) => {
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
-const setOpacity = (obj, opacity) => {
-    obj.traverse((child) => {
-        if (child.isMesh) {
-            child.material.transparent = true;
-            child.material.opacity = opacity;
-        }
+const setOpacityForSelected = (opacity) => {
+    console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
+
+    if (selectedModels.length === 0) {
+        console.warn("setOpacityForSelected() - No models in selectedModels array!");
+        return;
+    }
+
+    selectedModels.forEach((model) => {
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = true;
+                child.material.format = THREE.RGBAFormat; // required for opacity
+                child.material.opacity = opacity;
+            }
+        });
     });
 };
 
@@ -301,7 +312,7 @@ const onTouchEnd = (event) => {
     }
     previewItem = item;
     scene.add(previewItem);
-    setOpacity(previewItem, 0.5);
+   setOpacityForSelected(0.5); 
     confirmButtons.style.display = "flex";
     // Set model selected state to true
     isModelSelected = true;
@@ -309,7 +320,7 @@ const onTouchEnd = (event) => {
         const placeModel = () => {
     if (previewItem && reticle.visible) {
         const clone = deepClone(previewItem);
-        setOpacity(clone, 1.0);
+        setOpacityForSelected(0.5); 
         
         const position = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
