@@ -310,7 +310,6 @@ const onTouchEnd = (event) => {
     }
 };
 
-// Make sure we hide delete button when placing new objects
 const placeModel = () => {
     console.log("placeModel() called. Current selectedModels:", selectedModels);
 
@@ -324,8 +323,8 @@ const placeModel = () => {
         return;
     }
 
-    console.log("Cloning selected models...");
-    /*const clonedModels = deepCloneSelectedModels();
+  /*  console.log("Cloning selected models...");
+    const clonedModels = deepCloneSelectedModels();
 
     if (clonedModels.length === 0) {
         console.warn("placeModel() - No models to place after cloning!");
@@ -338,7 +337,7 @@ const placeModel = () => {
     reticle.matrix.decompose(position, rotation, new THREE.Vector3());
 
     // Place each cloned model at the reticle's position
-  /*  clonedModels.forEach((model) => {
+    /*clonedModels.forEach((model) => {
         model.position.copy(position);
         model.quaternion.copy(rotation);*/
 
@@ -353,7 +352,17 @@ const placeModel = () => {
 
         scene.add(model);
         placedItems.push(model);
-    };
+    
+    // Cleanup after placement
+    scene.remove(previewItem);
+    previewItem = null;
+    isModelSelected = false;
+    reticle.visible = false;
+    confirmButtons.style.display = "none";
+    deleteButton.style.display = "none";
+
+    console.log("Models placed successfully.");
+};
 
     // Cleanup after placement
     scene.remove(previewItem);
