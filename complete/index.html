@@ -505,89 +505,84 @@
     <button id="delete-button" class="button-shadow">Delete</button>
 
    <script>
- const menuButton = document.getElementById('menu-button');
-const bottomMenu = document.getElementById('bottom-menu');
-const menuContent = document.querySelector('.menu-content');
-let isMenuExpanded = false;
+  const menuButton = document.getElementById('menu-button');
+    const bottomMenu = document.getElementById('bottom-menu');
+    const menuContent = document.querySelector('.menu-content');
+    let isMenuExpanded = false;
 
-// Function to reset menu state
-function resetMenuState() {
-    // Close submenu
-    document.getElementById('submenu-container').classList.remove('open');
-    document.getElementById('close-button').style.display = 'none';
-    
-    // Remove active class from category items
-    document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-    
-    // Collapse bottom menu
-    bottomMenu.classList.remove('expanded');
-    menuContent.classList.remove('visible');
-    
-    // Reset menu state
-    isMenuExpanded = false;
-    
-    // Show the original menu button
-    menuButton.classList.remove('hidden');
-}
-
-// Menu button click handler
-menuButton.addEventListener('click', () => {
-    isMenuExpanded = !isMenuExpanded;
-    bottomMenu.classList.toggle('expanded');
-    
-    if (isMenuExpanded) {
-        menuButton.classList.add('hidden');
-        menuContent.classList.add('visible');
-    } else {
-        resetMenuState();
-    }
-});
-
-// Category item click handlers
-document.querySelectorAll('.category-item').forEach(item => {
-    item.addEventListener('click', function() {
-        const submenuContainer = document.getElementById('submenu-container');
-        const closeButton = document.getElementById('close-button');
-        const targetSubmenu = document.getElementById(${this.dataset.category}-submenu);
-        const isCurrentlyActive = this.classList.contains('active');
-
-        // Remove active state from all categories and hide all submenus
-        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
-
-        if (!isCurrentlyActive) {
-            // Activate selected category and show its submenu
-            this.classList.add('active');
-            submenuContainer.classList.add('open');
-            closeButton.style.display = 'flex';
-            if (targetSubmenu) {
-                targetSubmenu.style.display = 'block';
-            }
+    menuButton.addEventListener('click', () => {
+        isMenuExpanded = !isMenuExpanded;
+        bottomMenu.classList.toggle('expanded');
+        
+        if (isMenuExpanded) {
+            // Add a class to hide the menu button instead of using style.display
+            menuButton.classList.add('hidden');
+            menuContent.classList.add('visible');
         } else {
-            // Close submenu if clicking active category
-            submenuContainer.classList.remove('open');
-            closeButton.style.display = 'none';
+            // Remove the hide class
+            menuButton.classList.remove('hidden');
+            menuContent.classList.remove('visible');
+            // Close submenu if open
+            document.getElementById('submenu-container').classList.remove('open');
+            document.getElementById('close-button').style.display = 'none';
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         }
     });
-});
 
-// Close button click handler
-document.getElementById('close-button').addEventListener('click', resetMenuState);
+    // Existing category item click handlers
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const submenuContainer = document.getElementById('submenu-container');
+            const closeButton = document.getElementById('close-button');
+            const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
+            const isCurrentlyActive = this.classList.contains('active');
 
-// Cancel button click handler
-document.getElementById('cancel').addEventListener('click', resetMenuState);
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
-// Item image click handlers
-document.querySelectorAll('.item-image').forEach(item => {
-    item.addEventListener('click', function() {
-        // Remove selected class from all items
-        document.querySelectorAll('.item-image').forEach(el => {
-            el.classList.remove('selected');
+            if (!isCurrentlyActive) {
+                this.classList.add('active');
+                submenuContainer.classList.add('open');
+                closeButton.style.display = 'flex';
+                if (targetSubmenu) {
+                    targetSubmenu.style.display = 'block';
+                }
+            } else {
+                submenuContainer.classList.remove('open');
+                closeButton.style.display = 'none';
+            }
         });
-        // Add selected class to clicked item
-        this.classList.add('selected');
     });
-});
+
+    document.getElementById('close-button').addEventListener('click', function() {
+        document.getElementById('submenu-container').classList.remove('open');
+        this.style.display = 'none';
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+    });
+
+    // Cancel button functionality
+    const cancelButton = document.getElementById('cancel');
+    cancelButton.addEventListener('click', function() {
+        // Reset menu expansion state
+        isMenuExpanded = false;
+        
+        // Collapse the bottom menu
+        bottomMenu.classList.remove('expanded');
+        
+        // Hide menu content
+        menuContent.classList.remove('visible');
+        
+        // Make menu button visible again
+        menuButton.classList.remove('hidden');
+        
+        // Close the submenu if it's open
+        document.getElementById('submenu-container').classList.remove('open');
+        document.getElementById('close-button').style.display = 'none';
+        
+        // Remove active class from all category items
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+    });
+
 </script>
 
     <!-- Import JS module -->
