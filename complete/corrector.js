@@ -2,26 +2,20 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
-  const loadedModels = new Map();
-        let placedItems = [];
-        let previewItem = null;
-        let hitTestSource = null;
-        let hitTestSourceRequested = false;
-        let isModelSelected = false;
-        let selectedModels = [];
+const loadedModels = new Map();
+let placedItems = [];
+let previewItem = null;
+let hitTestSource = null;
+let hitTestSourceRequested = false;
+let isModelSelected = false;
+let selectedModel = null;
 
-
-     const selectModel = (model) => {
-    if (!selectedModels.includes(model)) {
-        selectedModels.push(model);
-        console.log("Model added to selectedModels:", model);
-    } else {
-        console.warn("Model is already in selectedModels:", model);
-    }
-    console.log("Updated selectedModels:", selectedModels);
+const selectModel = (model) => {
+    selectedModel = model;
+    console.log("Model selected:", model);
 };
 
- const normalizeModel = (obj, height) => {
+const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
     obj.scale.multiplyScalar(height / size.y);
@@ -30,48 +24,23 @@ import { ARButton } from "../libs/jsm/ARButton.js";
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
+const setOpacityForModel = (model, opacity) => {
+    console.log(`setOpacityForModel(${opacity}) called for model:`, model);
 
-const setOpacityForSelected = (opacity) => {
-    console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("setOpacityForSelected() - No models in selectedModels array!");
+    if (!model) {
+        console.warn("setOpacityForModel() - No model provided!");
         return;
     }
 
-    selectedModels.forEach((model) => {
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.transparent = true;
-                child.material.format = THREE.RGBAFormat; // required for opacity
-                child.material.opacity = opacity;
-            }
-        });
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.format = THREE.RGBAFormat;
+            child.material.opacity = opacity;
+        }
     });
 };
-
-
-
-const deepCloneSelectedModels = () => {
-    console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("deepCloneSelectedModels() - No models in selectedModels!");
-        return [];
-    }
-
-    return selectedModels.map((model) => {
-        const clone = model.clone(true);
-        clone.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-            }
-        });
-        return clone;
-    });
-};
-
 
 const itemCategories = {
     table: [
@@ -100,10 +69,12 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
+        
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         scene.add(light);
         scene.add(directionalLight);
+        
         const arButton = ARButton.createButton(renderer, {
             requiredFeatures: ["hit-test"],
             optionalFeatures: ["dom-overlay"],
@@ -114,12 +85,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         document.body.appendChild(arButton);
+
         renderer.xr.addEventListener("sessionstart", () => {
             console.log("AR session started");
         });
+        
         renderer.xr.addEventListener("sessionend", () => {
             console.log("AR session ended");
         });
+
         const raycaster = new THREE.Raycaster();
         const touches = new THREE.Vector2();
         let selectedObject = null;
@@ -129,8 +103,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let previousTouchX = 0;
         let previousTouchY = 0;
         let previousPinchDistance = 0;
+
         const controller = renderer.xr.getController(0);
         scene.add(controller);
+
         const reticle = new THREE.Mesh(
             new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
             new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -138,67 +114,58 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.visible = false;
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
-      
+
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
-       const onTouchStart = (event) => {
-    event.preventDefault();
-    
-    if (event.touches.length === 1) {
-        // Calculate touch coordinates
-        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
-        
-        // Update raycaster
-        raycaster.setFromCamera(touches, camera);
-        
-        // Check for intersections with placed items
-        const intersects = raycaster.intersectObjects(placedItems, true);
-        
-        if (intersects.length > 0) {
-            // Find the root parent object
-            let parent = intersects[0].object;
-            while (parent.parent && parent.parent !== scene) {
-                parent = parent.parent;
-            }
-            
-            // Set the selected object
-            selectedObject = parent;
-            isRotating = true;
-            previousTouchX = event.touches[0].pageX;
-            isScaling = false;
-            isDragging = false;
-            
-            // Position and show delete button near touch point
-            deleteButton.style.left = `${event.touches[0].pageX - 40}px`; // Offset by half button width
-            deleteButton.style.top = `${event.touches[0].pageY - 60}px`; // Position above touch point
-            deleteButton.style.display = "block";
-            
-        } else {
-            // If we didn't hit any object, hide delete button
-            selectedObject = null;
-            deleteButton.style.display = "none";
-        }
-    }
-};
 
-// Update the onTouchEnd function to handle delete button visibility
-const onTouchEnd = (event) => {
-    if (event.touches.length === 0) {
-        isRotating = false;
-        isDragging = false;
-        isScaling = false;
-        
-        // Don't hide delete button immediately on touch end
-        // Only hide it if we're not selecting an object
-        if (!selectedObject) {
-            deleteButton.style.display = "none";
-        }
-    }
-};
+        const onTouchStart = (event) => {
+            event.preventDefault();
+            
+            if (event.touches.length === 1) {
+                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(touches, camera);
+                
+                const intersects = raycaster.intersectObjects(placedItems, true);
+                
+                if (intersects.length > 0) {
+                    let parent = intersects[0].object;
+                    while (parent.parent && parent.parent !== scene) {
+                        parent = parent.parent;
+                    }
+                    
+                    selectedObject = parent;
+                    isRotating = true;
+                    previousTouchX = event.touches[0].pageX;
+                    isScaling = false;
+                    isDragging = false;
+                    
+                    deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
+                    deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
+                    deleteButton.style.display = "block";
+                    
+                } else {
+                    selectedObject = null;
+                    deleteButton.style.display = "none";
+                }
+            }
+        };
+
+        const onTouchEnd = (event) => {
+            if (event.touches.length === 0) {
+                isRotating = false;
+                isDragging = false;
+                isScaling = false;
+                
+                if (!selectedObject) {
+                    deleteButton.style.display = "none";
+                }
+            }
+        };
 
         const onTouchMove = (event) => {
             event.preventDefault();
@@ -227,23 +194,21 @@ const onTouchEnd = (event) => {
                 previousPinchDistance = currentPinchDistance;
             }
         };
-        
-       renderer.domElement.addEventListener('touchstart', onTouchStart, false);
-       renderer.domElement.addEventListener('touchmove', onTouchMove, false);
-       renderer.domElement.addEventListener('touchend', onTouchEnd, false);
-        
-     
-     const menuButton = document.getElementById("menu-button");
-     const closeButton = document.getElementById("close-button");
-     const sidebarMenu = document.getElementById("sidebar-menu");
-     const confirmButtons = document.getElementById("confirm-buttons");
-     const placeButton = document.getElementById("place");
-     const cancelButton = document.getElementById("cancel");
-     const deleteButton = document.getElementById("delete-button");
-     const surfaceIndicator = document.getElementById("surface-indicator");
-     const statusMessage = document.getElementById("status-message");
 
-     
+        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
+
+        const menuButton = document.getElementById("menu-button");
+        const closeButton = document.getElementById("close-button");
+        const sidebarMenu = document.getElementById("sidebar-menu");
+        const confirmButtons = document.getElementById("confirm-buttons");
+        const placeButton = document.getElementById("place");
+        const cancelButton = document.getElementById("cancel");
+        const deleteButton = document.getElementById("delete-button");
+        const surfaceIndicator = document.getElementById("surface-indicator");
+        const statusMessage = document.getElementById("status-message");
+
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -255,12 +220,14 @@ const onTouchEnd = (event) => {
                 reticle.visible = false;
             }
         });
+
         menuButton.addEventListener("click", (event) => {
             event.stopPropagation();
             sidebarMenu.classList.add("open");
             menuButton.style.display = "none";
             closeButton.style.display = "block";
         });
+
         closeButton.addEventListener("click", (event) => {
             event.stopPropagation();
             sidebarMenu.classList.remove("open");
@@ -270,6 +237,7 @@ const onTouchEnd = (event) => {
                 reticle.visible = false;
             }
         });
+
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
@@ -283,103 +251,83 @@ const onTouchEnd = (event) => {
                 clickedSubmenu.classList.toggle("open");
             });
         });
-       const showModel = (item) => {
-    if (previewItem) {
-        scene.remove(previewItem);
-    }
 
-    selectModel(item); 
-    console.log("showModel() called. Selected models:", selectedModels);
-    
-    previewItem = item;
-    scene.add(previewItem);
-    
-    setOpacityForSelected(0.5);  
-
-    confirmButtons.style.display = "flex";
-    isModelSelected = true;
-};
-
-
-      const deleteModel = () => {
-    if (selectedObject) {
-        scene.remove(selectedObject);
-        placedItems = placedItems.filter(item => item !== selectedObject);
-        selectedObject = null;
-        deleteButton.style.display = "none";
-    }
-};
-
-// Make sure we hide delete button when placing new objects
-const placeModel = () => {
-    console.log("placeModel() called. Current selectedModels:", selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
-        return;
-    }
-
-    if (!previewItem || !reticle.visible) {
-        console.warn("placeModel() - No preview item or reticle is not visible.");
-        return;
-    }
-
-    console.log("Cloning selected models...");
-    const clonedModels = deepCloneSelectedModels();
-
-    if (clonedModels.length === 0) {
-        console.warn("placeModel() - No models to place after cloning!");
-        return;
-    }
-
-    // Get reticle position & rotation
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
-
-    // Place each cloned model at the reticle's position
-    clonedModels.forEach((model) => {
-        model.position.copy(position);
-        model.quaternion.copy(rotation);
-
-        // Ensure material is fully opaque
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.transparent = false;
-                child.material.opacity = 1.0;
+        const showModel = (item) => {
+            if (previewItem) {
+                scene.remove(previewItem);
             }
-        });
 
-        scene.add(model);
-        placedItems.push(model);
-    });
+            selectModel(item);
+            console.log("showModel() called. Selected model:", selectedModel);
+            
+            previewItem = item;
+            scene.add(previewItem);
+            
+            setOpacityForModel(previewItem, 0.5);
 
-    // Cleanup after placement
-    scene.remove(previewItem);
-    previewItem = null;
-    isModelSelected = false;
-    reticle.visible = false;
-    confirmButtons.style.display = "none";
-    deleteButton.style.display = "none";
+            confirmButtons.style.display = "flex";
+            isModelSelected = true;
+        };
 
-    console.log("Models placed successfully.");
-};
+        const deleteModel = () => {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                placedItems = placedItems.filter(item => item !== selectedObject);
+                selectedObject = null;
+                deleteButton.style.display = "none";
+            }
+        };
 
+        const placeModel = () => {
+            console.log("placeModel() called. Current selected model:", selectedModel);
+
+            if (!selectedModel || !previewItem || !reticle.visible) {
+                console.warn("placeModel() - No model to place or reticle is not visible.");
+                return;
+            }
+
+            // Get reticle position & rotation
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+
+            // Update model position and rotation
+            selectedModel.position.copy(position);
+            selectedModel.quaternion.copy(rotation);
+
+            // Make model fully opaque
+            setOpacityForModel(selectedModel, 1.0);
+
+            // Add to scene and placed items
+            scene.add(selectedModel);
+            placedItems.push(selectedModel);
+
+            // Cleanup
+            scene.remove(previewItem);
+            previewItem = null;
+            selectedModel = null;
+            isModelSelected = false;
+            reticle.visible = false;
+            confirmButtons.style.display = "none";
+            deleteButton.style.display = "none";
+
+            console.log("Model placed successfully.");
+        };
 
         const cancelModel = () => {
             if (previewItem) {
                 scene.remove(previewItem);
                 previewItem = null;
             }
+            selectedModel = null;
             isModelSelected = false;
             reticle.visible = false;
             confirmButtons.style.display = "none";
         };
-        
+
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
-       deleteButton.addEventListener("click", deleteModel);
+        deleteButton.addEventListener("click", deleteModel);
 
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
@@ -397,8 +345,7 @@ const placeModel = () => {
                             e.stopPropagation();
                             const model = loadedModels.get(`${category}-${itemName}`);
                             if (model) {
-                                const modelClone = model.clone(true);
-                                showModel(modelClone);
+                                showModel(model);
                             }
                         });
                     }
@@ -407,6 +354,7 @@ const placeModel = () => {
                 }
             }
         }
+
         renderer.setAnimationLoop((timestamp, frame) => {
             if (frame) {
                 const referenceSpace = renderer.xr.getReferenceSpace();
