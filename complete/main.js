@@ -322,7 +322,12 @@ const placeModel = () => {
         console.warn("placeModel() - No preview item or reticle is not visible.");
         return;
     }
+// Get reticle position & rotation
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
 
+  
   /*  console.log("Cloning selected models...");
     const clonedModels = deepCloneSelectedModels();
 
@@ -331,15 +336,12 @@ const placeModel = () => {
         return;
     }*/
 
-    // Get reticle position & rotation
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+    
 
     // Place each cloned model at the reticle's position
     /*clonedModels.forEach((model) => {
         model.position.copy(position);
-        model.quaternion.copy(rotation);*/
+        model.quaternion.copy(rotation);
 
         // Ensure material is fully opaque
         model.traverse((child) => {
@@ -348,7 +350,7 @@ const placeModel = () => {
                 child.material.transparent = false;
                 child.material.opacity = 1.0;
             }
-        });
+        });*/
 
         scene.add(model);
         placedItems.push(model);
@@ -406,8 +408,8 @@ const placeModel = () => {
                             e.stopPropagation();
                             const model = loadedModels.get(`${category}-${itemName}`);
                             if (model) {
-                                const modelClone = model.clone(true);
-                                showModel(modelClone);
+                                //const modelClone = model.clone(true);
+                               showModel(model);
                             }
                         });
                     }
