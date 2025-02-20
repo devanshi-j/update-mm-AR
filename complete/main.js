@@ -144,59 +144,124 @@ document.addEventListener("DOMContentLoaded", () => {
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
-       const onTouchStart = (event) => {
+      const onTouchStart = (event) => {
     event.preventDefault();
     
-    if (event.touches.length === 1) {
-        // Calculate touch coordinates
-        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+    touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+    touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(touches, camera);
+    const intersects = raycaster.intersectObjects(placedItems, true);
+    
+    if (intersects.length > 0) {
+        let parent = intersects[0].object;
+        while (parent.parent && parent.parent !== scene) {
+            parent = parent.parent;
+        }
         
-        // Update raycaster
-        raycaster.setFromCamera(touches, camera);
+        selectedObject = parent;
         
-        // Check for intersections with placed items
-        const intersects = raycaster.intersectObjects(placedItems, true);
+        if (event.touches.length === 1) {
+            isRotating = true;
+            isDragging = false;
+            isScaling = false;
+            previousTouchX = event.touches[0].pageX;
+            
+            // Show delete button
+            deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
+            deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
+            deleteButton.style.display = "block";
+        } 
+        else if (event.touches.length === 2) {
+            isRotating = false;
+            
+            // Calculate initial position for dragging
+            previousTouchX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+            previousTouchY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+            
+            // Calculate initial distance for scaling
+            previousPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+            
+            // Enable both dragging and scaling for two-finger touch
+            isDragging = true;
+            isScaling = true;
+            
+            // Hide delete button during two-finger operations
+            deleteButton.style.display = "none";
+        }
+    } else {
+        selectedObject = null;
+        isRotating = false;
+        isDragging = false;
+        isScaling = false;
+        deleteButton.style.display = "none";
+    }
+};
+
+// Modified onTouchMove function with improved two-finger handling
+const onTouchMove = (event) => {
+    event.preventDefault();
+    
+    if (!selectedObject) return;
+
+    if (event.touches.length === 1 && isRotating) {
+        // Single finger rotation
+        const deltaX = event.touches[0].pageX - previousTouchX;
+        selectedObject.rotateY(deltaX * 0.005);
+        previousTouchX = event.touches[0].pageX;
+    } 
+    else if (event.touches.length === 2) {
+        // Two finger gestures
+        const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+        const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
         
-        if (intersects.length > 0) {
-            // Find the root parent object
-            let parent = intersects[0].object;
-            while (parent.parent && parent.parent !== scene) {
-                parent = parent.parent;
+        if (isDragging) {
+            // Handle dragging
+            const deltaX = (currentCenterX - previousTouchX) * 0.01;
+            const deltaY = (currentCenterY - previousTouchY) * 0.01;
+            
+            selectedObject.position.x += deltaX;
+            selectedObject.position.z += deltaY;
+            
+            previousTouchX = currentCenterX;
+            previousTouchY = currentCenterY;
+        }
+        
+        if (isScaling) {
+            // Handle scaling
+            const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+            const scaleFactor = currentPinchDistance / previousPinchDistance;
+            
+            if (scaleFactor !== 1) {
+                const newScale = selectedObject.scale.x * scaleFactor;
+                if (newScale >= 0.5 && newScale <= 2) {
+                    selectedObject.scale.multiplyScalar(scaleFactor);
+                }
             }
             
-            // Set the selected object
-            selectedObject = parent;
-            isRotating = true;
-            previousTouchX = event.touches[0].pageX;
-            isScaling = false;
-            isDragging = false;
-            
-            // Position and show delete button near touch point
-            deleteButton.style.left = `${event.touches[0].pageX - 40}px`; // Offset by half button width
-            deleteButton.style.top = `${event.touches[0].pageY - 60}px`; // Position above touch point
-            deleteButton.style.display = "block";
-            
-        } else {
-            // If we didn't hit any object, hide delete button
-            selectedObject = null;
-            deleteButton.style.display = "none";
+            previousPinchDistance = currentPinchDistance;
         }
     }
 };
 
-// Update the onTouchEnd function to handle delete button visibility
+// Modified onTouchEnd function with better state management
 const onTouchEnd = (event) => {
     if (event.touches.length === 0) {
         isRotating = false;
         isDragging = false;
         isScaling = false;
         
-        // Don't hide delete button immediately on touch end
-        // Only hide it if we're not selecting an object
+        // Keep delete button visible if object is still selected
         if (!selectedObject) {
             deleteButton.style.display = "none";
         }
+    }
+    else if (event.touches.length === 1) {
+        // If transitioning from two fingers to one finger
+        isDragging = false;
+        isScaling = false;
+        isRotating = true;
+        previousTouchX = event.touches[0].pageX;
     }
 };
 
