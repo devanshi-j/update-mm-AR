@@ -583,6 +583,26 @@
         document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
     });
 
+    document.getElementById('close-button').addEventListener('click', function() {
+    // Reset menu expansion state
+    isMenuExpanded = false;
+    
+    // Collapse the bottom menu
+    bottomMenu.classList.remove('expanded');
+    
+    // Hide menu content
+    menuContent.classList.remove('visible');
+    
+    // Make menu button visible again
+    menuButton.classList.remove('hidden');
+    
+    // Close the submenu if it's open
+    document.getElementById('submenu-container').classList.remove('open');
+    this.style.display = 'none';
+    
+    // Remove active class from all category items
+    document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+
 </script>
 
     <!-- Import JS module -->
