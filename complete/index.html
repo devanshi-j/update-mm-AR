@@ -17,8 +17,8 @@
        #menu-button {
             position: absolute;
             left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            bottom: 5px; /* Position from bottom instead of top */
+            transform: translateX(-50%);
             width: 60px;
             height: 30px;
             background: transparent;
@@ -30,6 +30,12 @@
             justify-content: center;
             align-items: center;
             z-index: 101;
+            transition: opacity 0.3s ease;
+        }
+
+        #menu-button.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .menu-content {
@@ -68,23 +74,24 @@
             color: #000;
         }
 
-       #bottom-menu {
+        #bottom-menu {
             position: fixed;
-            bottom: 0;
+            bottom: -40px; /* Start hidden below the viewport */
             left: 0;
             width: 100%;
             background-color: #8B7355;
             z-index: 100;
-            height: 40px; /* Start with half height */
+            height: 40px;
             display: flex;
-            overflow: hidden; /* Hide overflow content initially */
-            transition: height 0.3s ease;
+            overflow: hidden;
+            transition: all 0.3s ease;
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
         }
 
         #bottom-menu.expanded {
-            height: 80px; /* Full height when expanded */
+            bottom: 0; /* Slide up into view */
+            height: 80px;
             overflow-x: auto;
             padding: 10px 0;
         }
@@ -503,26 +510,35 @@
        const menuButton = document.getElementById('menu-button');
         const bottomMenu = document.getElementById('bottom-menu');
         const menuContent = document.querySelector('.menu-content');
+        const closeButton = document.getElementById('close-button');
         let isMenuExpanded = false;
 
         menuButton.addEventListener('click', () => {
-            isMenuExpanded = !isMenuExpanded;
-            bottomMenu.classList.toggle('expanded');
+            isMenuExpanded = true;
+            bottomMenu.classList.add('expanded');
+            menuButton.classList.add('hidden');
             
-            if (isMenuExpanded) {
-                setTimeout(() => {
-                    menuContent.classList.add('visible');
-                }, 100);
-            } else {
-                menuContent.classList.remove('visible');
-                // Close submenu if open
-                document.getElementById('submenu-container').classList.remove('open');
-                document.getElementById('close-button').style.display = 'none';
-                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-            }
+            setTimeout(() => {
+                menuContent.classList.add('visible');
+            }, 100);
         });
 
-        // Existing category item click handlers
+        closeButton.addEventListener('click', function() {
+            // Close both menus
+            isMenuExpanded = false;
+            bottomMenu.classList.remove('expanded');
+            document.getElementById('submenu-container').classList.remove('open');
+            this.style.display = 'none';
+            menuContent.classList.remove('visible');
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+            
+            // Show menu button after a slight delay
+            setTimeout(() => {
+                menuButton.classList.remove('hidden');
+            }, 300); // Matches the transition time
+        });
+
+        // Keep existing category item click handlers
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', function() {
                 const submenuContainer = document.getElementById('submenu-container');
@@ -545,12 +561,6 @@
                     closeButton.style.display = 'none';
                 }
             });
-        });
-
-        document.getElementById('close-button').addEventListener('click', function() {
-            document.getElementById('submenu-container').classList.remove('open');
-            this.style.display = 'none';
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         });
     </script>
 
