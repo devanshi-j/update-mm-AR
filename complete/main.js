@@ -8,17 +8,7 @@ let previewItem = null;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
 let isModelSelected = false;
-let selectedModels = [];
-
-const selectModel = (model) => {
-    if (!selectedModels.includes(model)) {
-        selectedModels.push(model);
-        console.log("Model added to selectedModels:", model);
-    } else {
-        console.warn("Model is already in selectedModels:", model);
-    }
-    console.log("Updated selectedModels:", selectedModels);
-};
+let selectedModel = null;
 
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
@@ -29,44 +19,30 @@ const normalizeModel = (obj, height) => {
     obj.position.set(-center.x, -center.y, -center.z);
 };
 
-const setOpacityForSelected = (opacity) => {
-    console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("setOpacityForSelected() - No models in selectedModels array!");
-        return;
-    }
-
-    selectedModels.forEach((model) => {
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.transparent = true;
-                child.material.format = THREE.RGBAFormat; // required for opacity
-                child.material.opacity = opacity;
-            }
-        });
+const setModelOpacity = (model, opacity) => {
+    if (!model) return;
+    
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.format = THREE.RGBAFormat;
+            child.material.opacity = opacity;
+        }
     });
 };
 
-/*const deepCloneSelectedModels = () => {
-    console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("deepCloneSelectedModels() - No models in selectedModels!");
-        return [];
-    }
-
-    return selectedModels.map((model) => {
-        const clone = model.clone(true);
-        clone.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-            }
-        });
-        return clone;
+const cloneModel = (model) => {
+    if (!model) return null;
+    
+    const clone = model.clone(true);
+    clone.traverse((child) => {
+        if (child.isMesh) {
+            child.material = child.material.clone();
+        }
     });
-};*/
+    return clone;
+};
 
 const itemCategories = {
     table: [
@@ -88,6 +64,7 @@ const itemCategories = {
 
 document.addEventListener("DOMContentLoaded", () => {
     const initialize = async () => {
+        // Scene setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -95,12 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
-        
+
+        // Lighting
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         scene.add(light);
         scene.add(directionalLight);
-        
+
+        // AR Setup
         const arButton = ARButton.createButton(renderer, {
             requiredFeatures: ["hit-test"],
             optionalFeatures: ["dom-overlay"],
@@ -112,14 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         document.body.appendChild(arButton);
 
-        renderer.xr.addEventListener("sessionstart", () => {
-            console.log("AR session started");
-        });
-        
-        renderer.xr.addEventListener("sessionend", () => {
-            console.log("AR session ended");
-        });
+        // Session event listeners
+        renderer.xr.addEventListener("sessionstart", () => console.log("AR session started"));
+        renderer.xr.addEventListener("sessionend", () => console.log("AR session ended"));
 
+        // Interaction setup
         const raycaster = new THREE.Raycaster();
         const touches = new THREE.Vector2();
         let selectedObject = null;
@@ -130,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let previousTouchY = 0;
         let previousPinchDistance = 0;
 
+        // Controller and reticle setup
         const controller = renderer.xr.getController(0);
         scene.add(controller);
 
@@ -141,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
 
+        // Touch handling functions
         const getTouchDistance = (touch1, touch2) => {
             const dx = touch1.pageX - touch2.pageX;
             const dy = touch1.pageY - touch2.pageY;
@@ -155,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
                 
                 raycaster.setFromCamera(touches, camera);
-                
                 const intersects = raycaster.intersectObjects(placedItems, true);
                 
                 if (intersects.length > 0) {
@@ -173,7 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
                     deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
                     deleteButton.style.display = "block";
-                    
                 } else {
                     selectedObject = null;
                     deleteButton.style.display = "none";
@@ -221,10 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
+        // Event listeners
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
         renderer.domElement.addEventListener('touchend', onTouchEnd, false);
 
+        // UI Elements
         const menuButton = document.getElementById("menu-button");
         const closeButton = document.getElementById("close-button");
         const sidebarMenu = document.getElementById("sidebar-menu");
@@ -232,9 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeButton = document.getElementById("place");
         const cancelButton = document.getElementById("cancel");
         const deleteButton = document.getElementById("delete-button");
-        const surfaceIndicator = document.getElementById("surface-indicator");
-        const statusMessage = document.getElementById("status-message");
 
+        // UI Event handlers
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -264,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // Submenu handling
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
@@ -278,21 +256,20 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        // Model handling functions
         const showModel = (item) => {
             if (previewItem) {
                 scene.remove(previewItem);
             }
 
-            selectModel(item);
-            console.log("showModel() called. Selected models:", selectedModels);
-            
-            previewItem = item;
-            scene.add(previewItem);
-            
-            setOpacityForSelected(0.5);
-
-            confirmButtons.style.display = "flex";
-            isModelSelected = true;
+            selectedModel = item;
+            previewItem = cloneModel(item);
+            if (previewItem) {
+                scene.add(previewItem);
+                setModelOpacity(previewItem, 0.5);
+                confirmButtons.style.display = "flex";
+                isModelSelected = true;
+            }
         };
 
         const deleteModel = () => {
@@ -305,59 +282,28 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const placeModel = () => {
-    console.log("placeModel() called. Current selectedModels:", selectedModels);
+            if (!previewItem || !reticle.visible || !selectedModel) return;
 
-    if (selectedModels.length === 0) {
-        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
-        return;
-    }
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            reticle.matrix.decompose(position, rotation, new THREE.Vector3());
 
-    if (!previewItem || !reticle.visible) {
-        console.warn("placeModel() - No preview item or reticle is not visible.");
-        return;
-    }
-
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
-
-    // Place each selected model
-    selectedModels.forEach((model) => {
-        model.position.copy(position);
-        model.quaternion.copy(rotation);
-
-        // Reset opacity to fully visible
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material.transparent = false;
-                child.material.opacity = 1.0;
+            const placedModel = cloneModel(selectedModel);
+            if (placedModel) {
+                placedModel.position.copy(position);
+                placedModel.quaternion.copy(rotation);
+                setModelOpacity(placedModel, 1.0);
+                scene.add(placedModel);
+                placedItems.push(placedModel);
             }
-        });
 
-        scene.add(model);
-        placedItems.push(model);
-    });
-
-    scene.remove(previewItem);
-    previewItem = null;
-    isModelSelected = false;
-    reticle.visible = false;
-    confirmButtons.style.display = "none";
-    deleteButton.style.display = "none";
-    
-    // Clear the selectedModels array after placing
-    selectedModels.length = 0;
-
-    console.log("Models placed successfully.");
-};
             scene.remove(previewItem);
             previewItem = null;
+            selectedModel = null;
             isModelSelected = false;
             reticle.visible = false;
             confirmButtons.style.display = "none";
             deleteButton.style.display = "none";
-
-            console.log("Models placed successfully.");
         };
 
         const cancelModel = () => {
@@ -365,15 +311,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 scene.remove(previewItem);
                 previewItem = null;
             }
+            selectedModel = null;
             isModelSelected = false;
             reticle.visible = false;
             confirmButtons.style.display = "none";
         };
 
+        // Button event listeners
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
         deleteButton.addEventListener("click", deleteModel);
 
+        // Load models
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
                 const itemName = `${category}${i}`;
@@ -383,6 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const item = new THREE.Group();
                     item.add(model.scene);
                     loadedModels.set(`${category}-${itemName}`, item);
+                    
                     const thumbnail = document.querySelector(`#${category}-${itemName}`);
                     if (thumbnail) {
                         thumbnail.addEventListener("click", (e) => {
@@ -390,9 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             e.stopPropagation();
                             const model = loadedModels.get(`${category}-${itemName}`);
                             if (model) {
-                               
-                                //const modelClone = model.clone(true);
-                              showModel(model);
+                                showModel(model);
                             }
                         });
                     }
@@ -401,10 +349,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         }
+
+        // Animation loop
         renderer.setAnimationLoop((timestamp, frame) => {
             if (frame) {
                 const referenceSpace = renderer.xr.getReferenceSpace();
                 const session = renderer.xr.getSession();
+
                 if (!hitTestSourceRequested) {
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
                         session.requestHitTestSource({ space: referenceSpace }).then((source) => {
@@ -413,12 +364,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     hitTestSourceRequested = true;
                 }
+
                 if (hitTestSource) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
                     if (hitTestResults.length > 0 && isModelSelected) {
                         const hit = hitTestResults[0];
                         reticle.visible = true;
                         reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        
                         if (previewItem) {
                             const position = new THREE.Vector3();
                             const rotation = new THREE.Quaternion();
