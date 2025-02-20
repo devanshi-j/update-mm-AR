@@ -350,10 +350,10 @@ const placeModel = () => {
                 child.material.transparent = false;
                 child.material.opacity = 1.0;
             }
-        });*/
+        });
 
         scene.add(model);
-        placedItems.push(model);
+        placedItems.push(model);*/
     
     // Cleanup after placement
     scene.remove(previewItem);
