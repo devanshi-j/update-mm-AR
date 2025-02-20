@@ -305,46 +305,51 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const placeModel = () => {
-            console.log("placeModel() called. Current selectedModels:", selectedModels);
+    console.log("placeModel() called. Current selectedModels:", selectedModels);
 
-            if (selectedModels.length === 0) {
-                console.warn("placeModel() - No models in selectedModels! Nothing to place.");
-                return;
+    if (selectedModels.length === 0) {
+        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
+        return;
+    }
+
+    if (!previewItem || !reticle.visible) {
+        console.warn("placeModel() - No preview item or reticle is not visible.");
+        return;
+    }
+
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+
+    // Place each selected model
+    selectedModels.forEach((model) => {
+        model.position.copy(position);
+        model.quaternion.copy(rotation);
+
+        // Reset opacity to fully visible
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
             }
+        });
 
-            if (!previewItem || !reticle.visible) {
-                console.warn("placeModel() - No preview item or reticle is not visible.");
-                return;
-            }
+        scene.add(model);
+        placedItems.push(model);
+    });
 
-            const position = new THREE.Vector3();
-            const rotation = new THREE.Quaternion();
-            reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+    scene.remove(previewItem);
+    previewItem = null;
+    isModelSelected = false;
+    reticle.visible = false;
+    confirmButtons.style.display = "none";
+    deleteButton.style.display = "none";
+    
+    // Clear the selectedModels array after placing
+    selectedModels.length = 0;
 
-            /*console.log("Cloning selected models...");
-            const clonedModels = deepCloneSelectedModels();
-
-            if (clonedModels.length === 0) {
-                console.warn("placeModel() - No models to place after cloning!");
-                return;
-            }
-
-            clonedModels.forEach((model) => {
-                model.position.copy(position);
-                model.quaternion.copy(rotation);
-
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = false;
-                        child.material.opacity = 1.0;
-                    }
-                });*/
-
-                scene.add(model);
-                placedItems.push(model);
-            });
-
+    console.log("Models placed successfully.");
+};
             scene.remove(previewItem);
             previewItem = null;
             isModelSelected = false;
