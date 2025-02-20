@@ -353,7 +353,7 @@ const placeModel = () => {
 
         scene.add(model);
         placedItems.push(model);
-    });
+    };
 
     // Cleanup after placement
     scene.remove(previewItem);
