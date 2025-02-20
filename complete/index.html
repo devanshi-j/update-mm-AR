@@ -14,25 +14,23 @@
             -webkit-user-select: none;
             user-select: none;
         }
-
-       #menu-button {
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #FFF44F;
-            width: 90px;
-            height: 50px;
-            border: none;
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 200;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
-            backdrop-filter: blur(4px);
-        }
+#menu-button {
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #FFF44F;
+    width: 40px;
+    height: 40px;
+    border: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 200;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
         #close-button {
             font-size: 24px;
             cursor: pointer;
@@ -458,40 +456,49 @@
     <button id="delete-button" class="button-shadow">Delete</button>
 
     <script>
-        document.querySelectorAll('.category-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const submenuContainer = document.getElementById('submenu-container');
-                const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
-                const isCurrentlyActive = this.classList.contains('active');
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const submenuContainer = document.getElementById('submenu-container');
+            const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
+            const isCurrentlyActive = this.classList.contains('active');
+            const menuButton = document.getElementById('menu-button');
 
-                // Remove active class from all category items
-                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-                
-                // Hide all submenus
-                document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
-
-                // If the clicked item wasn't active, show its submenu
-                if (!isCurrentlyActive) {
-                    this.classList.add('active');
-                    submenuContainer.classList.add('open');
-                    if (targetSubmenu) {
-                        targetSubmenu.style.display = 'block';
-                    }
-                } else {
-                    // If it was active, close the submenu container
-                    submenuContainer.classList.remove('open');
-                }
-            });
-        });
-
-        // Add close button functionality
-        document.getElementById('close-button').addEventListener('click', function() {
-            document.getElementById('submenu-container').classList.remove('open');
+            // Remove active class from all category items
             document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-        });
-    </script>
+            
+            // Hide all submenus
+            document.querySelectorAll('.submenu-content').forEach(el => el.style.display = 'none');
 
-    <!-- Import JS module -->
+            // If the clicked item wasn't active, show its submenu
+            if (!isCurrentlyActive) {
+                this.classList.add('active');
+                submenuContainer.classList.add('open');
+                if (targetSubmenu) {
+                    targetSubmenu.style.display = 'block';
+                }
+                menuButton.innerHTML = '&times;';
+            } else {
+                // If it was active, close the submenu container
+                submenuContainer.classList.remove('open');
+                menuButton.innerHTML = '&equiv;';
+            }
+        });
+    });
+
+    // Add menu button functionality
+    document.getElementById('menu-button').addEventListener('click', function() {
+        const submenuContainer = document.getElementById('submenu-container');
+        const isOpen = submenuContainer.classList.contains('open');
+        
+        if (isOpen) {
+            submenuContainer.classList.remove('open');
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+            this.innerHTML = '&equiv;';
+        }
+    });
+
+    // Import JS module
     <script type="module" src="../complete/main.js"></script>
+</script>
 </body>
 </html>
