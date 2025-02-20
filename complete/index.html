@@ -505,16 +505,35 @@
     <button id="delete-button" class="button-shadow">Delete</button>
 
   
-  <script>
+ <script>
     document.addEventListener("DOMContentLoaded", function () {
         const menuButton = document.getElementById("menu-button");
         const bottomMenu = document.getElementById("bottom-menu");
         const menuContent = document.querySelector(".menu-content");
         const closeButton = document.getElementById("close-button");
+        const cancelButton = document.getElementById("cancel"); // Cancel button
         const submenuContainer = document.getElementById("submenu-container");
         const categoryItems = document.querySelectorAll(".category-item");
 
         let isMenuExpanded = false;
+
+        // Function to close the entire menu (Cancel & Close button share this)
+        function closeMenu() {
+            isMenuExpanded = false;
+            bottomMenu.classList.remove("expanded");
+            menuContent.classList.remove("visible");
+            menuButton.style.display = "flex"; // Show menu button
+            closeButton.style.display = "none"; // Hide close button
+
+            // Reset submenus & remove active category selections
+            submenuContainer.classList.remove("open");
+            categoryItems.forEach(el => el.classList.remove("active"));
+
+            // Hide all submenus
+            document.querySelectorAll(".submenu-content").forEach(sub => {
+                sub.style.display = "none";
+            });
+        }
 
         // Open/Close Bottom Menu
         menuButton.addEventListener("click", function () {
@@ -533,31 +552,36 @@
         // Close button should reset both menus
         closeButton.addEventListener("click", closeMenu);
 
-        function closeMenu() {
-            isMenuExpanded = false;
-            bottomMenu.classList.remove("expanded");
-            menuContent.classList.remove("visible");
-            menuButton.style.display = "flex"; // Show menu button
-            closeButton.style.display = "none"; // Hide close button
+        // Cancel button should work exactly like the close button
+        cancelButton.addEventListener("click", closeMenu);
 
-            // Reset submenus & remove active category selections
-            submenuContainer.classList.remove("open");
-            categoryItems.forEach(el => el.classList.remove("active"));
-        }
-
-        // Handle category item clicks (if needed)
+        // Handle category item clicks (toggle submenu)
         categoryItems.forEach(item => {
             item.addEventListener("click", function () {
-                categoryItems.forEach(el => el.classList.remove("active"));
-                this.classList.add("active");
+                const targetSubmenu = document.getElementById(`${this.dataset.category}-submenu`);
+                const isCurrentlyActive = this.classList.contains("active");
 
-                // Open submenu when a category is clicked
-                submenuContainer.classList.add("open");
+                // Remove active state from all categories
+                categoryItems.forEach(el => el.classList.remove("active"));
+
+                // Hide all submenus
+                document.querySelectorAll(".submenu-content").forEach(sub => {
+                    sub.style.display = "none";
+                });
+
+                if (!isCurrentlyActive) {
+                    this.classList.add("active");
+                    submenuContainer.classList.add("open");
+                    if (targetSubmenu) {
+                        targetSubmenu.style.display = "block";
+                    }
+                } else {
+                    submenuContainer.classList.remove("open");
+                }
             });
         });
     });
 </script>
-
 
     <!-- Import JS module -->
     <script type="module" src="../complete/main.js"></script>
