@@ -504,7 +504,6 @@
     <button id="delete-button" class="button-shadow">Delete</button>
 
     <script>
-      <script>
    const menuButton = document.getElementById('menu-button');
     const bottomMenu = document.getElementById('bottom-menu');
     const menuContent = document.querySelector('.menu-content');
@@ -515,14 +514,12 @@
         bottomMenu.classList.toggle('expanded');
         
         if (isMenuExpanded) {
-            // Hide the menu button when expanded
-            menuButton.style.display = 'none';
-            setTimeout(() => {
-                menuContent.classList.add('visible');
-            }, 100);
+            // Add a class to hide the menu button instead of using style.display
+            menuButton.classList.add('hidden');
+            menuContent.classList.add('visible');
         } else {
-            // Show the menu button when collapsed
-            menuButton.style.display = 'flex';
+            // Remove the hide class
+            menuButton.classList.remove('hidden');
             menuContent.classList.remove('visible');
             // Close submenu if open
             document.getElementById('submenu-container').classList.remove('open');
@@ -562,7 +559,6 @@
         document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
     });
 </script>
-    </script>
 
     <!-- Import JS module -->
     <script type="module" src="../complete/main.js"></script>
