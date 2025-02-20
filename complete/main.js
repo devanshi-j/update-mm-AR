@@ -53,7 +53,7 @@ const setOpacityForSelected = (opacity) => {
 
 
 
-const deepCloneSelectedModels = () => {
+/*const deepCloneSelectedModels = () => {
     console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
 
     if (selectedModels.length === 0) {
@@ -70,7 +70,7 @@ const deepCloneSelectedModels = () => {
         });
         return clone;
     });
-};
+};*/
 
 
 const itemCategories = {
@@ -325,12 +325,12 @@ const placeModel = () => {
     }
 
     console.log("Cloning selected models...");
-    const clonedModels = deepCloneSelectedModels();
+    /*const clonedModels = deepCloneSelectedModels();
 
     if (clonedModels.length === 0) {
         console.warn("placeModel() - No models to place after cloning!");
         return;
-    }
+    }*/
 
     // Get reticle position & rotation
     const position = new THREE.Vector3();
@@ -338,9 +338,9 @@ const placeModel = () => {
     reticle.matrix.decompose(position, rotation, new THREE.Vector3());
 
     // Place each cloned model at the reticle's position
-    clonedModels.forEach((model) => {
+  /*  clonedModels.forEach((model) => {
         model.position.copy(position);
-        model.quaternion.copy(rotation);
+        model.quaternion.copy(rotation);*/
 
         // Ensure material is fully opaque
         model.traverse((child) => {
