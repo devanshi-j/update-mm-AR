@@ -2,16 +2,15 @@ import { loadGLTF } from "../libs/loader.js";
 import * as THREE from "../libs/three123/three.module.js";
 import { ARButton } from "../libs/jsm/ARButton.js";
 
-  const loadedModels = new Map();
-        let placedItems = [];
-        let previewItem = null;
-        let hitTestSource = null;
-        let hitTestSourceRequested = false;
-        let isModelSelected = false;
-        let selectedModels = [];
+const loadedModels = new Map();
+let placedItems = [];
+let previewItem = null;
+let hitTestSource = null;
+let hitTestSourceRequested = false;
+let isModelSelected = false;
+let selectedModels = [];
 
-
-     const selectModel = (model) => {
+const selectModel = (model) => {
     if (!selectedModels.includes(model)) {
         selectedModels.push(model);
         console.log("Model added to selectedModels:", model);
@@ -21,7 +20,7 @@ import { ARButton } from "../libs/jsm/ARButton.js";
     console.log("Updated selectedModels:", selectedModels);
 };
 
- const normalizeModel = (obj, height) => {
+const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
     obj.scale.multiplyScalar(height / size.y);
@@ -29,7 +28,6 @@ import { ARButton } from "../libs/jsm/ARButton.js";
     const center = bbox2.getCenter(new THREE.Vector3());
     obj.position.set(-center.x, -center.y, -center.z);
 };
-
 
 const setOpacityForSelected = (opacity) => {
     console.log(`setOpacityForSelected(${opacity}) called. Selected models:`, selectedModels);
@@ -44,34 +42,12 @@ const setOpacityForSelected = (opacity) => {
             if (child.isMesh) {
                 child.material = child.material.clone();
                 child.material.transparent = true;
-                child.material.format = THREE.RGBAFormat; // required for opacity
+                child.material.format = THREE.RGBAFormat;
                 child.material.opacity = opacity;
             }
         });
     });
 };
-
-
-
-/*const deepCloneSelectedModels = () => {
-    console.log("deepCloneSelectedModels() called. Cloning:", selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("deepCloneSelectedModels() - No models in selectedModels!");
-        return [];
-    }
-
-    return selectedModels.map((model) => {
-        const clone = model.clone(true);
-        clone.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-            }
-        });
-        return clone;
-    });
-};*/
-
 
 const itemCategories = {
     table: [
@@ -144,61 +120,52 @@ document.addEventListener("DOMContentLoaded", () => {
             const dy = touch1.pageY - touch2.pageY;
             return Math.sqrt(dx * dx + dy * dy);
         };
-       const onTouchStart = (event) => {
-    event.preventDefault();
-    
-    if (event.touches.length === 1) {
-        // Calculate touch coordinates
-        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
-        
-        // Update raycaster
-        raycaster.setFromCamera(touches, camera);
-        
-        // Check for intersections with placed items
-        const intersects = raycaster.intersectObjects(placedItems, true);
-        
-        if (intersects.length > 0) {
-            // Find the root parent object
-            let parent = intersects[0].object;
-            while (parent.parent && parent.parent !== scene) {
-                parent = parent.parent;
-            }
-            
-            // Set the selected object
-            selectedObject = parent;
-            isRotating = true;
-            previousTouchX = event.touches[0].pageX;
-            isScaling = false;
-            isDragging = false;
-            
-            // Position and show delete button near touch point
-            deleteButton.style.left = `${event.touches[0].pageX - 40}px`; // Offset by half button width
-            deleteButton.style.top = `${event.touches[0].pageY - 60}px`; // Position above touch point
-            deleteButton.style.display = "block";
-            
-        } else {
-            // If we didn't hit any object, hide delete button
-            selectedObject = null;
-            deleteButton.style.display = "none";
-        }
-    }
-};
 
-// Update the onTouchEnd function to handle delete button visibility
-const onTouchEnd = (event) => {
-    if (event.touches.length === 0) {
-        isRotating = false;
-        isDragging = false;
-        isScaling = false;
-        
-        // Don't hide delete button immediately on touch end
-        // Only hide it if we're not selecting an object
-        if (!selectedObject) {
-            deleteButton.style.display = "none";
-        }
-    }
-};
+        const onTouchStart = (event) => {
+            event.preventDefault();
+            
+            if (event.touches.length === 1) {
+                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(touches, camera);
+                
+                const intersects = raycaster.intersectObjects(placedItems, true);
+                
+                if (intersects.length > 0) {
+                    let parent = intersects[0].object;
+                    while (parent.parent && parent.parent !== scene) {
+                        parent = parent.parent;
+                    }
+                    
+                    selectedObject = parent;
+                    isRotating = true;
+                    previousTouchX = event.touches[0].pageX;
+                    isScaling = false;
+                    isDragging = false;
+                    
+                    deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
+                    deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
+                    deleteButton.style.display = "block";
+                    
+                } else {
+                    selectedObject = null;
+                    deleteButton.style.display = "none";
+                }
+            }
+        };
+
+        const onTouchEnd = (event) => {
+            if (event.touches.length === 0) {
+                isRotating = false;
+                isDragging = false;
+                isScaling = false;
+                
+                if (!selectedObject) {
+                    deleteButton.style.display = "none";
+                }
+            }
+        };
 
         const onTouchMove = (event) => {
             event.preventDefault();
@@ -228,22 +195,20 @@ const onTouchEnd = (event) => {
             }
         };
         
-       renderer.domElement.addEventListener('touchstart', onTouchStart, false);
-       renderer.domElement.addEventListener('touchmove', onTouchMove, false);
-       renderer.domElement.addEventListener('touchend', onTouchEnd, false);
+        renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+        renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+        renderer.domElement.addEventListener('touchend', onTouchEnd, false);
         
-     
-     const menuButton = document.getElementById("menu-button");
-     const closeButton = document.getElementById("close-button");
-     const sidebarMenu = document.getElementById("sidebar-menu");
-     const confirmButtons = document.getElementById("confirm-buttons");
-     const placeButton = document.getElementById("place");
-     const cancelButton = document.getElementById("cancel");
-     const deleteButton = document.getElementById("delete-button");
-     const surfaceIndicator = document.getElementById("surface-indicator");
-     const statusMessage = document.getElementById("status-message");
+        const menuButton = document.getElementById("menu-button");
+        const closeButton = document.getElementById("close-button");
+        const sidebarMenu = document.getElementById("sidebar-menu");
+        const confirmButtons = document.getElementById("confirm-buttons");
+        const placeButton = document.getElementById("place");
+        const cancelButton = document.getElementById("cancel");
+        const deleteButton = document.getElementById("delete-button");
+        const surfaceIndicator = document.getElementById("surface-indicator");
+        const statusMessage = document.getElementById("status-message");
 
-     
         document.addEventListener("click", (event) => {
             const isClickInsideMenu = sidebarMenu?.contains(event.target);
             const isClickOnMenuButton = menuButton?.contains(event.target);
@@ -255,12 +220,14 @@ const onTouchEnd = (event) => {
                 reticle.visible = false;
             }
         });
+
         menuButton.addEventListener("click", (event) => {
             event.stopPropagation();
             sidebarMenu.classList.add("open");
             menuButton.style.display = "none";
             closeButton.style.display = "block";
         });
+
         closeButton.addEventListener("click", (event) => {
             event.stopPropagation();
             sidebarMenu.classList.remove("open");
@@ -270,6 +237,7 @@ const onTouchEnd = (event) => {
                 reticle.visible = false;
             }
         });
+
         const icons = document.querySelectorAll(".icon");
         icons.forEach((icon) => {
             icon.addEventListener("click", (event) => {
@@ -283,89 +251,63 @@ const onTouchEnd = (event) => {
                 clickedSubmenu.classList.toggle("open");
             });
         });
-       const showModel = (item) => {
-    if (previewItem) {
-        scene.remove(previewItem);
-    }
 
-    selectModel(item); 
-    console.log("showModel() called. Selected models:", selectedModels);
-    
-    previewItem = item;
-    scene.add(previewItem);
-    
-    setOpacityForSelected(0.5);  
-
-    confirmButtons.style.display = "flex";
-    isModelSelected = true;
-};
-
-
-      const deleteModel = () => {
-    if (selectedObject) {
-        scene.remove(selectedObject);
-        placedItems = placedItems.filter(item => item !== selectedObject);
-        selectedObject = null;
-        deleteButton.style.display = "none";
-    }
-};
-
-// Make sure we hide delete button when placing new objects
-const placeModel = () => {
-    console.log("placeModel() called. Current selectedModels:", selectedModels);
-
-    if (selectedModels.length === 0) {
-        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
-        return;
-    }
-
-    if (!previewItem || !reticle.visible) {
-        console.warn("placeModel() - No preview item or reticle is not visible.");
-        return;
-    }
-
-    console.log("Cloning selected models...");
-    /*const clonedModels = deepCloneSelectedModels();
-
-    if (clonedModels.length === 0) {
-        console.warn("placeModel() - No models to place after cloning!");
-        return;
-    }*/
-
-    // Get reticle position & rotation
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
-
-    // Place each cloned model at the reticle's position
-  /*  clonedModels.forEach((model) => {
-        model.position.copy(position);
-        model.quaternion.copy(rotation);*/
-
-        // Ensure material is fully opaque
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.transparent = false;
-                child.material.opacity = 1.0;
+        const showModel = (item) => {
+            if (previewItem) {
+                scene.remove(previewItem);
             }
-        });
 
-        scene.add(model);
-        placedItems.push(model);
-    });
+            selectModel(item);
+            console.log("showModel() called. Selected models:", selectedModels);
+            
+            previewItem = item;
+            scene.add(previewItem);
+            
+            setOpacityForSelected(0.5);
 
-    // Cleanup after placement
-    scene.remove(previewItem);
-    previewItem = null;
-    isModelSelected = false;
-    reticle.visible = false;
-    confirmButtons.style.display = "none";
-    deleteButton.style.display = "none";
+            confirmButtons.style.display = "flex";
+            isModelSelected = true;
+        };
 
-    console.log("Models placed successfully.");
-};
+        const deleteModel = () => {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                placedItems = placedItems.filter(item => item !== selectedObject);
+                selectedObject = null;
+                deleteButton.style.display = "none";
+            }
+        };
 
+        const placeModel = () => {
+            if (selectedModels.length === 0 || !previewItem || !reticle.visible) {
+                console.warn("placeModel() - Cannot place model: Invalid state");
+                return;
+            }
+
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+
+            previewItem.position.copy(position);
+            previewItem.quaternion.copy(rotation);
+
+            previewItem.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = child.material.clone();
+                    child.material.transparent = false;
+                    child.material.opacity = 1.0;
+                }
+            });
+
+            placedItems.push(previewItem);
+            
+            previewItem = null;
+            selectedModels = [];
+            isModelSelected = false;
+            reticle.visible = false;
+            confirmButtons.style.display = "none";
+            deleteButton.style.display = "none";
+        };
 
         const cancelModel = () => {
             if (previewItem) {
@@ -379,7 +321,7 @@ const placeModel = () => {
         
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
-       deleteButton.addEventListener("click", deleteModel);
+        deleteButton.addEventListener("click", deleteModel);
 
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
@@ -407,6 +349,7 @@ const placeModel = () => {
                 }
             }
         }
+
         renderer.setAnimationLoop((timestamp, frame) => {
             if (frame) {
                 const referenceSpace = renderer.xr.getReferenceSpace();
