@@ -257,51 +257,52 @@ document.addEventListener("DOMContentLoaded", () => {
         scene.remove(previewItem);
     }
 
-    selectModel(item);
+    selectModel(item); 
     console.log("showModel() called. Selected models:", selectedModels);
     
     previewItem = item;
     scene.add(previewItem);
     
-    setOpacityForSelected(0.5);
+    setOpacityForSelected(0.5);  
 
     confirmButtons.style.display = "flex";
     isModelSelected = true;
-    reticle.visible = true;  // Make sure reticle becomes visible when model is selected
 };
 
-        const deleteModel = () => {
-            if (selectedObject) {
-                scene.remove(selectedObject);
-                placedItems = placedItems.filter(item => item !== selectedObject);
-                selectedObject = null;
-                deleteButton.style.display = "none";
-            }
-        };
 
+      const deleteModel = () => {
+    if (selectedObject) {
+        scene.remove(selectedObject);
+        placedItems = placedItems.filter(item => item !== selectedObject);
+        selectedObject = null;
+        deleteButton.style.display = "none";
+    }
+};
+       
        const placeModel = () => {
     console.log("placeModel() called. Current selectedModels:", selectedModels);
+
+    if (selectedModels.length === 0) {
+        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
+        return;
+    }
 
     if (!previewItem || !reticle.visible) {
         console.warn("placeModel() - No preview item or reticle is not visible.");
         return;
     }
 
-    // Get reticle's position and rotation
+    // Get reticle position & rotation
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
-    reticle.matrix.decompose(position, rotation, scale);
+    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
 
-    // Clone the preview item to create the placed item
-    const placedItem = previewItem.clone(true);
-    
-    // Set the position and rotation of the placed item
-    placedItem.position.copy(position);
-    placedItem.quaternion.copy(rotation);
+    // Set the position and rotation of the preview item
+    previewItem.position.copy(position);
+    previewItem.quaternion.copy(rotation);
 
-    // Make the placed item fully opaque
-    placedItem.traverse((child) => {
+    // Make it fully opaque
+    previewItem.traverse((child) => {
         if (child.isMesh) {
             child.material = child.material.clone();
             child.material.transparent = false;
@@ -309,12 +310,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Add the placed item to the scene and tracking array
-    scene.add(placedItem);
-    placedItems.push(placedItem);
+    // Add to placed items array
+    placedItems.push(previewItem);
 
-    // Clean up
-    scene.remove(previewItem);
+    // Reset states
     previewItem = null;
     selectedModels = [];
     isModelSelected = false;
@@ -322,10 +321,10 @@ document.addEventListener("DOMContentLoaded", () => {
     confirmButtons.style.display = "none";
     deleteButton.style.display = "none";
 
-    console.log("Model placed successfully");
+    console.log("Model placed successfully.");
 };
 
-        const cancelModel = () => {
+       const cancelModel = () => {
             if (previewItem) {
                 scene.remove(previewItem);
                 previewItem = null;
@@ -337,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         placeButton.addEventListener("click", placeModel);
         cancelButton.addEventListener("click", cancelModel);
-        deleteButton.addEventListener("click", deleteModel);
+       deleteButton.addEventListener("click", deleteModel);
 
         for (const category of ['table', 'chair', 'shelf']) {
             for (let i = 1; i <= 3; i++) {
@@ -365,53 +364,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         }
-
-       renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame) {
-        const referenceSpace = renderer.xr.getReferenceSpace();
-        const session = renderer.xr.getSession();
-
-        if (!hitTestSourceRequested) {
-            session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                    hitTestSource = source;
-                });
-            });
-            hitTestSourceRequested = true;
-        }
-
-        if (hitTestSource) {
-            const hitTestResults = frame.getHitTestResults(hitTestSource);
-            
-            if (hitTestResults.length > 0) {
-                const hit = hitTestResults[0];
-                const hitPose = hit.getPose(referenceSpace);
-                
-                if (hitPose) {
-                    reticle.visible = isModelSelected;  // Only show reticle when a model is selected
-                    reticle.matrix.fromArray(hitPose.transform.matrix);
-                    
-                    if (previewItem && isModelSelected) {
-                        // Update preview item position to match reticle
-                        const position = new THREE.Vector3();
-                        const rotation = new THREE.Quaternion();
-                        const scale = new THREE.Vector3();
-                        reticle.matrix.decompose(position, rotation, scale);
-                        
-                        previewItem.position.copy(position);
-                        previewItem.quaternion.copy(rotation);
+        renderer.setAnimationLoop((timestamp, frame) => {
+            if (frame) {
+                const referenceSpace = renderer.xr.getReferenceSpace();
+                const session = renderer.xr.getSession();
+                if (!hitTestSourceRequested) {
+                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                            hitTestSource = source;
+                        });
+                    });
+                    hitTestSourceRequested = true;
+                }
+                if (hitTestSource) {
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+                    if (hitTestResults.length > 0 && isModelSelected) {
+                        const hit = hitTestResults[0];
+                        reticle.visible = true;
+                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        if (previewItem) {
+                            const position = new THREE.Vector3();
+                            const rotation = new THREE.Quaternion();
+                            const scale = new THREE.Vector3();
+                            reticle.matrix.decompose(position, rotation, scale);
+                            previewItem.position.copy(position);
+                            previewItem.quaternion.copy(rotation);
+                        }
+                    } else {
+                        reticle.visible = false;
                     }
                 }
-            } else {
-                reticle.visible = false;
             }
-        }
-    }
-    
-    renderer.render(scene, camera);
-});
-
-            
+            renderer.render(scene, camera);
+        });
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
