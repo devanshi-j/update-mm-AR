@@ -120,85 +120,124 @@ document.addEventListener("DOMContentLoaded", () => {
         reticle.matrixAutoUpdate = false;
         scene.add(reticle);
       
-        const getTouchDistance = (touch1, touch2) => {
-            const dx = touch1.pageX - touch2.pageX;
-            const dy = touch1.pageY - touch2.pageY;
-            return Math.sqrt(dx * dx + dy * dy);
-        };
-
         const onTouchStart = (event) => {
-            event.preventDefault();
+    event.preventDefault();
+    
+    if (event.touches.length === 1) {
+        touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
+        touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
+        
+        raycaster.setFromCamera(touches, camera);
+        const intersects = raycaster.intersectObjects(placedItems, true);
+        
+        if (intersects.length > 0) {
+            let parent = intersects[0].object;
+            while (parent.parent && parent.parent !== scene) {
+                parent = parent.parent;
+            }
             
-            if (event.touches.length === 1) {
-                touches.x = (event.touches[0].pageX / window.innerWidth) * 2 - 1;
-                touches.y = -(event.touches[0].pageY / window.innerHeight) * 2 + 1;
-                
-                raycaster.setFromCamera(touches, camera);
-                
-                const intersects = raycaster.intersectObjects(placedItems, true);
-                
-                if (intersects.length > 0) {
-                    let parent = intersects[0].object;
-                    while (parent.parent && parent.parent !== scene) {
-                        parent = parent.parent;
-                    }
-                    
-                    selectedObject = parent;
-                    isRotating = true;
-                    previousTouchX = event.touches[0].pageX;
-                    isScaling = false;
-                    isDragging = false;
-                    
-                    deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
-                    deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
-                    deleteButton.style.display = "block";
-                    
-                } else {
-                    selectedObject = null;
-                    deleteButton.style.display = "none";
-                }
-            }
-        };
+            selectedObject = parent;
+            isRotating = true;
+            previousTouchX = event.touches[0].pageX;
+            isScaling = false;
+            isDragging = false;
+            
+            deleteButton.style.left = `${event.touches[0].pageX - 40}px`;
+            deleteButton.style.top = `${event.touches[0].pageY - 60}px`;
+            deleteButton.style.display = "block";
+        } else {
+            selectedObject = null;
+            deleteButton.style.display = "none";
+        }
+    } else if (event.touches.length === 2 && selectedObject) {
+        isRotating = false;
+        
+        // Calculate initial position for dragging
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        previousTouchX = (touch1.pageX + touch2.pageX) / 2;
+        previousTouchY = (touch1.pageY + touch2.pageY) / 2;
+        
+        // Calculate initial distance for scaling
+        previousPinchDistance = getTouchDistance(touch1, touch2);
+        
+        // Set the gesture mode
+        const touchDistance = getTouchDistance(touch1, touch2);
+        if (touchDistance < 100) {
+            isDragging = true;
+            isScaling = false;
+        } else {
+            isScaling = true;
+            isDragging = false;
+        }
+    }
+};
 
-        const onTouchEnd = (event) => {
-            if (event.touches.length === 0) {
-                isRotating = false;
-                isDragging = false;
-                isScaling = false;
-                
-                if (!selectedObject) {
-                    deleteButton.style.display = "none";
+const onTouchMove = (event) => {
+    event.preventDefault();
+    
+    if (isRotating && event.touches.length === 1 && selectedObject) {
+        const deltaX = event.touches[0].pageX - previousTouchX;
+        selectedObject.rotateY(deltaX * 0.005);
+        previousTouchX = event.touches[0].pageX;
+    } 
+    else if (event.touches.length === 2 && selectedObject) {
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        
+        if (isDragging) {
+            const currentCenterX = (touch1.pageX + touch2.pageX) / 2;
+            const currentCenterY = (touch1.pageY + touch2.pageY) / 2;
+            
+            const deltaX = (currentCenterX - previousTouchX) * 0.01;
+            const deltaZ = (currentCenterY - previousTouchY) * 0.01;
+            
+            selectedObject.position.x += deltaX;
+            selectedObject.position.z += deltaZ;
+            
+            previousTouchX = currentCenterX;
+            previousTouchY = currentCenterY;
+        }
+        else if (isScaling) {
+            const currentPinchDistance = getTouchDistance(touch1, touch2);
+            const scaleFactor = currentPinchDistance / previousPinchDistance;
+            
+            if (scaleFactor !== 1) {
+                const newScale = selectedObject.scale.x * scaleFactor;
+                if (newScale >= 0.5 && newScale <= 2) {
+                    selectedObject.scale.setScalar(newScale);
                 }
             }
-        };
+            
+            previousPinchDistance = currentPinchDistance;
+        }
+    }
+};
 
-        const onTouchMove = (event) => {
-            event.preventDefault();
-            if (isRotating && event.touches.length === 1 && selectedObject) {
-                const deltaX = event.touches[0].pageX - previousTouchX;
-                selectedObject.rotateY(deltaX * 0.005);
-                previousTouchX = event.touches[0].pageX;
-            } else if (isDragging && event.touches.length === 2 && selectedObject) {
-                const currentCenterX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-                const currentCenterY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-                const deltaX = (currentCenterX - previousTouchX) * 0.01;
-                const deltaY = (currentCenterY - previousTouchY) * 0.01;
-                selectedObject.position.x += deltaX;
-                selectedObject.position.z += deltaY;
-                previousTouchX = currentCenterX;
-                previousTouchY = currentCenterY;
-            } else if (isScaling && event.touches.length === 2 && selectedObject) {
-                const currentPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
-                const scaleFactor = currentPinchDistance / previousPinchDistance;
-                if (scaleFactor !== 1) {
-                    const newScale = selectedObject.scale.x * scaleFactor;
-                    if (newScale >= 0.5 && newScale <= 2) {
-                        selectedObject.scale.multiplyScalar(scaleFactor);
-                    }
-                }
-                previousPinchDistance = currentPinchDistance;
-            }
-        };
+const onTouchEnd = (event) => {
+    if (event.touches.length === 0) {
+        isRotating = false;
+        isDragging = false;
+        isScaling = false;
+        
+        if (!selectedObject) {
+            deleteButton.style.display = "none";
+        }
+    }
+    // If one finger remains, switch back to rotation
+    else if (event.touches.length === 1 && selectedObject) {
+        isRotating = true;
+        isDragging = false;
+        isScaling = false;
+        previousTouchX = event.touches[0].pageX;
+    }
+};
+
+const getTouchDistance = (touch1, touch2) => {
+    const dx = touch1.pageX - touch2.pageX;
+    const dy = touch1.pageY - touch2.pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+};
         
         renderer.domElement.addEventListener('touchstart', onTouchStart, false);
         renderer.domElement.addEventListener('touchmove', onTouchMove, false);
@@ -259,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       
 
-const showModel = (item) => {
+/*const showModel = (item) => {
     console.log("ShowModel called", item);
     
     if (previewItem) {
@@ -269,6 +308,8 @@ const showModel = (item) => {
     previewItem = item;
     selectModel(item);
     scene.add(previewItem);
+
+    setOpacityForSelected(0.5);
     
     // Set initial opacity
     previewItem.traverse((child) => {
@@ -288,6 +329,23 @@ const showModel = (item) => {
     }
     
     console.log("Preview item added to scene", previewItem);
+};*/
+
+     const showModel = (item) => {
+    if (previewItem) {
+        scene.remove(previewItem);
+    }
+
+    selectModel(item); 
+    console.log("showModel() called. Selected models:", selectedModels);
+    
+    previewItem = item;
+    scene.add(previewItem);
+    
+    setOpacityForSelected(0.5);  
+
+    confirmButtons.style.display = "flex";
+    isModelSelected = true;
 };
       const deleteModel = () => {
     if (selectedObject) {
