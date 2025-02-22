@@ -253,22 +253,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
        const showModel = (item) => {
+    console.log("ShowModel called", item); // Debug log
+    
     if (previewItem) {
         scene.remove(previewItem);
     }
 
-    selectModel(item); 
+    selectModel(item);
     console.log("showModel() called. Selected models:", selectedModels);
     
     previewItem = item;
     scene.add(previewItem);
+    console.log("Preview item added to scene", previewItem); // Debug log
     
-    setOpacityForSelected(0.5);  
+    setOpacityForSelected(0.5);
 
     confirmButtons.style.display = "flex";
     isModelSelected = true;
+    console.log("Model selected state:", isModelSelected); // Debug log
 };
-
 
       const deleteModel = () => {
     if (selectedObject) {
@@ -364,39 +367,50 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         }
-        renderer.setAnimationLoop((timestamp, frame) => {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
-                if (!hitTestSourceRequested) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    hitTestSourceRequested = true;
-                }
-                if (hitTestSource) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-                    if (hitTestResults.length > 0 && isModelSelected) {
-                        const hit = hitTestResults[0];
-                        reticle.visible = true;
-                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                        if (previewItem) {
-                            const position = new THREE.Vector3();
-                            const rotation = new THREE.Quaternion();
-                            const scale = new THREE.Vector3();
-                            reticle.matrix.decompose(position, rotation, scale);
-                            previewItem.position.copy(position);
-                            previewItem.quaternion.copy(rotation);
-                        }
-                    } else {
-                        reticle.visible = false;
+       renderer.setAnimationLoop((timestamp, frame) => {
+    if (frame) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const session = renderer.xr.getSession();
+        
+        if (!hitTestSourceRequested) {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                    hitTestSource = source;
+                    console.log("Hit test source acquired");
+                });
+            });
+            hitTestSourceRequested = true;
+        }
+
+        if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            console.log("Hit test results:", hitTestResults.length); // Debug log
+            
+            if (hitTestResults.length > 0) {
+                const hit = hitTestResults[0];
+                if (isModelSelected) {  // Changed this condition
+                    reticle.visible = true;
+                    console.log("Reticle set to visible"); // Debug log
+                    reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                    
+                    if (previewItem) {
+                        const position = new THREE.Vector3();
+                        const rotation = new THREE.Quaternion();
+                        const scale = new THREE.Vector3();
+                        reticle.matrix.decompose(position, rotation, scale);
+                        
+                        previewItem.position.copy(position);
+                        previewItem.quaternion.copy(rotation);
+                        console.log("Preview item positioned"); // Debug log
                     }
                 }
+            } else {
+                reticle.visible = false;
             }
-            renderer.render(scene, camera);
-        });
+        }
+    }
+    renderer.render(scene, camera);
+});
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
