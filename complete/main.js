@@ -10,7 +10,7 @@ let hitTestSourceRequested = false;
 let isModelSelected = false;
 let selectedModels = [];
 
-const selectModel = (model) => {
+/*const selectModel = (model) => {
     if (!selectedModels.includes(model)) {
         selectedModels.push(model);
         console.log("Model added to selectedModels:", model);
@@ -18,8 +18,13 @@ const selectModel = (model) => {
         console.warn("Model is already in selectedModels:", model);
     }
     console.log("Updated selectedModels:", selectedModels);
-};
+};*/
 
+ const selectModel = (model) => {
+    selectedModels = [model]; // Reset and add only the current model
+    console.log("Model selected:", model);
+    console.log("Updated selectedModels:", selectedModels);
+};
 const normalizeModel = (obj, height) => {
     const bbox = new THREE.Box3().setFromObject(obj);
     const size = bbox.getSize(new THREE.Vector3());
@@ -252,27 +257,38 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-       const showModel = (item) => {
-    console.log("ShowModel called", item); // Debug log
+      
+
+const showModel = (item) => {
+    console.log("ShowModel called", item);
     
     if (previewItem) {
         scene.remove(previewItem);
     }
 
-    selectModel(item);
-    console.log("showModel() called. Selected models:", selectedModels);
-    
     previewItem = item;
+    selectModel(item);
     scene.add(previewItem);
-    console.log("Preview item added to scene", previewItem); // Debug log
     
-    setOpacityForSelected(0.5);
+    // Set initial opacity
+    previewItem.traverse((child) => {
+        if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+        }
+    });
 
     confirmButtons.style.display = "flex";
     isModelSelected = true;
-    console.log("Model selected state:", isModelSelected); // Debug log
+    
+    // Ensure reticle becomes visible
+    if (renderer.xr.isPresenting) {
+        reticle.visible = true;
+    }
+    
+    console.log("Preview item added to scene", previewItem);
 };
-
       const deleteModel = () => {
     if (selectedObject) {
         scene.remove(selectedObject);
@@ -282,30 +298,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 };
        
-       const placeModel = () => {
+      const placeModel = () => {
     console.log("placeModel() called. Current selectedModels:", selectedModels);
+    console.log("Preview item:", previewItem);
+    console.log("Reticle visible:", reticle.visible);
 
-    if (selectedModels.length === 0) {
-        console.warn("placeModel() - No models in selectedModels! Nothing to place.");
+    if (!previewItem) {
+        console.warn("No preview item available");
         return;
     }
 
-    if (!previewItem || !reticle.visible) {
-        console.warn("placeModel() - No preview item or reticle is not visible.");
+    if (!reticle.visible) {
+        console.warn("Reticle is not visible - waiting for surface");
+        surfaceIndicator.textContent = "Please point at a surface";
         return;
     }
 
+    // Create a clone of the preview item
+    const placedModel = previewItem.clone();
+    
     // Get reticle position & rotation
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
-    reticle.matrix.decompose(position, rotation, new THREE.Vector3());
+    const scale = new THREE.Vector3();
+    reticle.matrix.decompose(position, rotation, scale);
 
-    // Set the position and rotation of the preview item
-    previewItem.position.copy(position);
-    previewItem.quaternion.copy(rotation);
+    // Set the position and rotation of the placed model
+    placedModel.position.copy(position);
+    placedModel.quaternion.copy(rotation);
 
     // Make it fully opaque
-    previewItem.traverse((child) => {
+    placedModel.traverse((child) => {
         if (child.isMesh) {
             child.material = child.material.clone();
             child.material.transparent = false;
@@ -313,18 +336,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Add to placed items array
-    placedItems.push(previewItem);
+    // Add to scene and placed items array
+    scene.add(placedModel);
+    placedItems.push(placedModel);
 
     // Reset states
+    scene.remove(previewItem);
     previewItem = null;
     selectedModels = [];
     isModelSelected = false;
     reticle.visible = false;
     confirmButtons.style.display = "none";
     deleteButton.style.display = "none";
+    surfaceIndicator.textContent = "";
 
-    console.log("Model placed successfully.");
+    console.log("Model placed successfully");
 };
 
        const cancelModel = () => {
@@ -384,14 +410,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
-            console.log("Hit test results:", hitTestResults.length); // Debug log
             
             if (hitTestResults.length > 0) {
                 const hit = hitTestResults[0];
-                if (isModelSelected) {  // Changed this condition
+                if (isModelSelected) {
+                    const hitPose = hit.getPose(referenceSpace);
                     reticle.visible = true;
-                    console.log("Reticle set to visible"); // Debug log
-                    reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                    reticle.matrix.fromArray(hitPose.transform.matrix);
                     
                     if (previewItem) {
                         const position = new THREE.Vector3();
@@ -401,11 +426,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         
                         previewItem.position.copy(position);
                         previewItem.quaternion.copy(rotation);
-                        console.log("Preview item positioned"); // Debug log
+                        surfaceIndicator.textContent = "Tap 'Place' to position the model";
                     }
                 }
             } else {
                 reticle.visible = false;
+                if (isModelSelected) {
+                    surfaceIndicator.textContent = "Point at a surface to place the model";
+                }
             }
         }
     }
